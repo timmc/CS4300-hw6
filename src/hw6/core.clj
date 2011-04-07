@@ -1,9 +1,35 @@
 (ns hw6.core
-  (:require [hw6.parser :as p])
-  (:import (java.io BufferedReader StringReader InputStreamReader))
   (:require [clojure.contrib.string :as str])
+  (:require [hw6.parser :as p]
+            [hw6.tracer :as rt])
+  (:import (java.io BufferedReader StringReader InputStreamReader)
+           (java.awt Dimension Graphics2D)
+           (javax.swing JComponent JFrame UIManager SwingUtilities))
   (:gen-class))
 
+
+(defn make-canvas
+  "Make a canvas that renders once."
+  [scene settings]
+  (let [jc (proxy [JComponent] []
+	     (paint [^Graphics2D g]
+               (rt/render g scene (.getWidth this) (.getHeight this)))
+             (update [_]))]
+    (doto jc
+      (.setDoubleBuffered true)
+      (.setPreferredSize (Dimension. (:w settings) (:h settings))))))
+
+(defn launch
+  "Open a window and render the scene."
+  [scene settings]
+  (UIManager/setLookAndFeel (UIManager/getSystemLookAndFeelClassName))
+  (let [fr (JFrame. "CS4300 HW6 - TimMc")]
+    (doto fr
+      (.setDefaultCloseOperation JFrame/DISPOSE_ON_CLOSE)
+      (.add (make-canvas scene settings))
+      (.pack)
+      (.setResizable false)
+      (.setVisible true))))
 
 (defn fail
   "Fail with a message."
@@ -12,23 +38,47 @@
     (println "Failed:" msg))
   (System/exit 1))
 
+(defn maybe-parse-int
+  "Try parsing a base-10 int. If fail, return nil."
+  [s]
+  (try (Integer/parseInt s 10)
+       (catch NumberFormatException nfe
+         nil)))
+
+(defn read-posint
+  "Read a positive integer value from the command line."
+  [remain flag field]
+  (if-let [val (first remain)]
+    (if-let [i (maybe-parse-int val)]
+      (if (< 0 i)
+        i
+        (fail (str "Negative " field " not allowed: " i)))
+      (fail (str "Could not parse " field " as integer: " val)))
+    (fail (str "Expected width after " flag))))
+
 (defn read-arguments
   "Read command-line arguments into a settings map:
 -f * :in = vector of filenames"
   [args]
-  (loop [settings {:in []}
+  (loop [settings {:in []
+                   :w 512
+                   :h 512}
          args args]
     (if (empty? args)
       settings
       (let [flag (first args)
             remain (rest args)]
         (condp = flag
-            "-f" (do
-                   (when (empty? remain)
-                     (fail "Expected filename after -f"))
-                   (recur (update-in settings [:in]
-                                     conj (first remain))
-                          (rest remain)))
+            "-f" (if-let [val (first remain)]
+                   (recur (update-in settings [:in] conj val)
+                          (rest remain))
+                   (fail "Expected filename after -f"))
+            "-w" (recur (assoc-in settings [:w]
+                                  (read-posint remain "width" flag))
+                        (rest remain))
+            "-h" (recur (assoc-in settings [:h]
+                                  (read-posint remain "height" flag))
+                        (rest remain))
             (fail (str "Unknown argument: " flag)))))))
 
 (defn -main
@@ -44,5 +94,5 @@
                        (count (:objects scene))
                        (count (:lights scene))))
       (println "Scene parsed as:" scene) ;XXX
-      )))
+      (SwingUtilities/invokeLater (partial launch scene settings)))))
 
