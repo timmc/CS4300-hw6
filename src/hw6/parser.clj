@@ -7,10 +7,10 @@
 ;;;     :specular={:r :g :b :p}
 ;;; - settings is :diffuse? :specular? :shadows? :mirror-limit :ambient
 ;;; - camera is :i => :pose=vertex
-;;; - light is :type=#{:point :directional} :i :I + :pose=vertex
+;;; - light is :type=#{:point :directional} :I :i => :pose=vertex
 ;;; - object is :type=#{:sphere :plane :triangle} :material=material + more
-;;;   - :plane also has :i + :pose=vertex
-;;;   - :triangle also has :i :j :k + :v0 :v1 :v2 (all vert/normals)
+;;;   - :plane also has :i => :pose=vertex
+;;;   - :triangle also has :i :j :k => :v0 :v1 :v2 (all vert/normals)
 ;;;   - :sphere also has :i => :center=[x y z] :radius=float
 
 ;;; A scene is a map of:
@@ -99,11 +99,40 @@
 
 ;;;; Fill-in
 
+(defn get-vertex
+  [scene i]
+  (get-in scene [:vertices i]))
+
+(defmulti expand-object
+  "Expand an object based on other scene data."
+  (fn [scene obj] (:type obj)))
+(defmethod expand-object :sphere [scene sphere]
+  (let [vert (get-vertex scene (:i sphere))
+        center (select-keys vert [:x :y :z])
+        radvec (select-keys vert [:dx :dy :dz])
+        radius (Math/sqrt (apply + (map #(* % %) (vals radvec))))]
+    (assoc sphere :center center :radius radius)))
+(defmethod expand-object :plane [scene plane]
+  (let [vert (get-vertex scene (:i plane))]
+    (assoc plane :pose vert)))
+(defmethod expand-object :triangle [scene triangle]
+  (assoc triangle
+    :v0 (get-vertex scene (:i triangle))
+    :v1 (get-vertex scene (:j triangle))
+    :v2 (get-vertex scene (:k triangle))))
+
+(defn expand-light [scene light]
+  (assoc light :pose (get-vertex scene (:i light))))
+(defn expand-camera [scene camera]
+  (assoc camera :pose (get-vertex scene (:i camera))))
+
 (defn expand
   "Fill in vertex values by index, etc."
   [scene]
-  scene ; TODO
-  )
+  (-> scene
+      (update-in ,,, [:objects] #(map (partial expand-object scene) %))
+      (update-in ,,, [:lights] #(map (partial expand-light scene) %))
+      (update-in ,,, [:camera] #(expand-camera scene %))))
 
 ;;;; Main loop
 
