@@ -1,0 +1,20 @@
+##one sphere with a plane below it
+se d s a 1 0.7 
+## camera at (-10, 75, 60) looking at origin
+vv -10 75 60 1 -7.5 -6
+cc 0
+## one point light at (100, 100, 0)
+vv 100 100 0 0 0 0
+pl 1 0.5
+## green sphere radius 10 at (0, 10, 0)
+am 0.0 0.6 0.0
+dm 0.0 0.4 0.0
+sm 0.4 0.4 0.4 128
+vv 0 10 0 10 0 0
+ss 2
+## white z-x plane
+am 0.8 0.8 0.8
+dm 0.5 0.5 0.5
+sm 0.1 0.1 0.1 1
+vv 0.0 0.0 0.0 0 1 0
+ps 3

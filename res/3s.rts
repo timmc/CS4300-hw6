@@ -1,0 +1,41 @@
+##three spheres
+se d s a 4 0.7 
+## camera at (-10, 75, 60) looking at origin
+vv -10 75 60 1 -7.5 -6
+cc 0
+## three point lights at x = -30 to 30, y = 10, z = 60 
+vv -30 10 60 0 0 0
+vv 0 10 60 0 0 0
+vv 30 10 60 0 0 0
+pl 1 0.5
+pl 2 0.5
+pl 3 0.5
+## red sphere radius 10 at (-25, 10, 0)
+am 0.6 0.0 0.0
+dm 0.4 0.0 0.0
+sm 0.4 0.4 0.4 128
+vv -25 10 0 10 0 0
+ss 4
+## green sphere radius 10 at (0, 10, 0)
+am 0.0 0.6 0.0
+dm 0.0 0.4 0.0
+vv 0 10 0 10 0 0
+ss 5
+## blue sphere radius 10 at (25, 10, 0)
+am 0.0 0.0 0.6
+dm 0.0 0.0 0.4
+vv 25 10 0 10 0 0
+ss 6
+## point light behind each sphere
+vv -30 1 -25 0 0 0
+vv 5 1 -25 0 0 0
+vv 40 1 -25 0 0 0
+pl 7 0.7
+pl 8 0.7
+pl 9 0.7
+am 0.8 0.8 0.8
+dm 0.5 0.5 0.5
+sm 0.1 0.1 0.1 1
+## z-x plane
+vv 0.0 0.0 0.0 0 1 0
+ps 10
