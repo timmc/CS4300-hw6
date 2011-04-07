@@ -2,7 +2,7 @@
   (:require [clojure.contrib.string :as str]))
 
 ;;; All data represented as maps:
-;;; - vertex is :x :y :z :dx :dy :dz (location + normal)
+;;; - vertex is {:start [x y z] :dir [x y z]}
 ;;; - material is :ambient={:r :g :b} :diffuse={:r :g :b}
 ;;;     :specular={:r :g :b :p}
 ;;; - settings is :diffuse? :specular? :shadows? :mirror-limit :ambient
@@ -25,7 +25,7 @@
 
 (def empty-scene
   {:vertices []
-   :camera {:pose {:x 0 :y 0 :z 0 :dx 0 :dy 0 :dz -1}}
+   :camera {:pose {:start [0 0 0] :dir [0 0 -1]}}
    :settings {:diffuse? true
               :specular? true
               :shadows? true
@@ -52,7 +52,7 @@
 (defmethod parse-line "vv" [scene _ & args]
   (let [[x y z dx dy dz] (map parse-float args)]
     (update-in scene [:vertices]
-               conj {:x x :y y :z z :dx dx :dy dy :dz dz})))
+               conj {:start [x y z] :dir [dx dy dz]})))
 ;; materials
 (defmethod parse-line "am" [scene _ & args]
   (let [[r g b] (map parse-float args)]
@@ -108,10 +108,8 @@
   (fn [scene obj] (:type obj)))
 (defmethod expand-object :sphere [scene sphere]
   (let [vert (get-vertex scene (:i sphere))
-        center (select-keys vert [:x :y :z])
-        radvec (select-keys vert [:dx :dy :dz])
-        radius (Math/sqrt (apply + (map #(* % %) (vals radvec))))]
-    (assoc sphere :center center :radius radius)))
+        radius (Math/sqrt (apply + (map #(* % %) (:dir vert))))]
+    (assoc sphere :center (:start vert) :radius radius)))
 (defmethod expand-object :plane [scene plane]
   (let [vert (get-vertex scene (:i plane))]
     (assoc plane :pose vert)))
