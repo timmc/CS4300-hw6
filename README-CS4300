@@ -1,0 +1,32 @@
+# Overview
+
+TODO
+
+# Usage
+
+TODO
+
+# Compilation
+
+timmcHW6 requires a GNU/Linux machine with Java on the classpath.
+
+On first run, the Leiningen build tool will be downloaded into the project
+directory and will install its dependencies into the ~/.lein directory.
+Compilation is JIT and will occur during the first run.
+
+# Execution
+
+Invoke `./run.sh` to execute HW6. Pass scene data in via standard input.
+
+# Known bugs
+
+None.
+
+# Extra credit
+
+None.
+
+# Third-party credit
+
+* Libraries used: Clojure, and Java standard libraries
+
