@@ -1,12 +1,13 @@
 (ns hw6.parser
-  (:require [clojure.contrib.string :as str]))
+  (:require [clojure.contrib.string :as str])
+  (:require [hw6.vec3 :as v]))
 
 ;;; All data represented as maps:
 ;;; - vertex is {:start [x y z] :dir [x y z]}
 ;;; - material is :ambient={:r :g :b} :diffuse={:r :g :b}
 ;;;     :specular={:r :g :b :p}
 ;;; - settings is :diffuse? :specular? :shadows? :mirror-limit :ambient
-;;; - camera is :i => :pose=vertex
+;;; - camera is :i => :pose=vertex :xfrom=3x3mat (from camera to world)
 ;;; - light is :type=#{:point :directional} :I :i => :pose=vertex
 ;;; - object is :type=#{:sphere :plane :triangle} :material=material + more
 ;;;   - :plane also has :i => :pose=vertex
@@ -108,7 +109,7 @@
   (fn [scene obj] (:type obj)))
 (defmethod expand-object :sphere [scene sphere]
   (let [vert (get-vertex scene (:i sphere))
-        radius (Math/sqrt (apply + (map #(* % %) (:dir vert))))]
+        radius (v/mag (:dir vert))]
     (assoc sphere :center (:start vert) :radius radius)))
 (defmethod expand-object :plane [scene plane]
   (let [vert (get-vertex scene (:i plane))]
@@ -122,7 +123,15 @@
 (defn expand-light [scene light]
   (assoc light :pose (get-vertex scene (:i light))))
 (defn expand-camera [scene camera]
-  (assoc camera :pose (get-vertex scene (:i camera))))
+  (let [{d :dir :as pose} (get-vertex scene (:i camera))
+        zcu (v/unit (v/scale d -1))
+        xc (v/cross d [0 1 0])
+        xcu (v/unit xc)
+        ycu (v/cross zcu xcu)
+        xfrom [xcu ycu zcu]]
+    (when (< (v/mag xc) 0.00001) ; TODO revert to older camera
+      (throw (Exception. "Camera xc too close to zero.")))
+    (assoc camera :pose pose :xfrom xfrom)))
 
 (defn expand
   "Fill in vertex values by index, etc."
