@@ -44,24 +44,34 @@ are required to reach it."
     (reduce (fn closer [h1 h2] (if (< (:dist h1) (:dist h2)) h1 h2)) hits)
     nil))
 
-(defn render
-  [^Graphics2D g, scene, ^Integer w, ^Integer h]
-  (let [bi (BufferedImage. w h BufferedImage/TYPE_INT_RGB)
-        eye (get-in scene [:camera :pose :start])
+(defn image-rays
+  "Returns a seq of cooresponding canvas pixels, points in the image plane, and
+rays from the viewpoint as {:pixel [x y], :pt [x y z], :ray <ray>}."
+  [camera w h]
+  (let [eye (get-in camera [:pose :start])
         flipspect (float (- (/ h w)))
         implane-z (float (- (/ (Math/sqrt 3) 2)))]
-    (doall
-     (for [x (range w)
-           y (range h)]
-       ;; TODO instead, iterate over world points after computing corners
-       (let [image-plane-pt [(- (/ x w) (float 0.5))
-                             (* flipspect (- (/ y w) (float 0.5)))
-                             implane-z]
-             ray-dir (v/xform (get-in scene [:camera :xfrom]) image-plane-pt)
-             pixel-ray {:start eye :dir ray-dir}
-             hits (ray-hits scene pixel-ray)
-             closest (closest-hit hits)]
-         (when closest
-           (.setRGB bi x y 0xFF0000)))))
-    (.drawImage g bi nil 0 0)))
+    (for [x (range w)
+          y (range h)]
+      ;; TODO instead, iterate over world points after computing corners
+      (let [image-plane-pt [(- (/ x w) (float 0.5))
+                            (* flipspect (- (/ y w) (float 0.5)))
+                            implane-z]
+            ray-dir (v/xform (:xfrom camera) image-plane-pt)
+            pixel-ray {:start eye :dir ray-dir}]
+        {:pixel [x y]
+         :pt image-plane-pt
+         :ray pixel-ray}))))
+
+(defn render
+  [^Graphics2D g, scene, ^Integer w, ^Integer h]
+  (let [bi (BufferedImage. w h BufferedImage/TYPE_INT_RGB)]
+    (doseq [{[vx vy] :pixel
+             image-pt :pt
+             pixel-ray :ray} (image-rays (:camera scene) w h)]
+      (let [hits (ray-hits scene pixel-ray)
+            closest (closest-hit hits)]
+        (when closest
+          (.setRGB bi vx vy 0xFF0000)))
+      (.drawImage g bi nil 0 0))))
 
