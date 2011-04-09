@@ -50,12 +50,13 @@ rays from the viewpoint as {:pixel [x y], :pt [x y z], :ray <ray>}."
   [camera w h]
   (let [eye (get-in camera [:pose :start])
         flipspect (float (- (/ h w)))
-        implane-z (float (- (/ (Math/sqrt 3) 2)))]
+        implane-z (float (- (/ (Math/sqrt 3) 2)))
+        pix-mid (float 0.5)]
     (for [x (range w)
           y (range h)]
       ;; TODO instead, iterate over world points after computing corners
-      (let [image-plane-pt [(- (/ x w) (float 0.5))
-                            (* flipspect (- (/ y w) (float 0.5)))
+      (let [image-plane-pt [(- (/ (+ x pix-mid) w) (float 0.5))
+                            (* flipspect (- (/ (+ y pix-mid) w) (float 0.5)))
                             implane-z]
             ray-dir (v/xform (:xfrom camera) image-plane-pt)
             pixel-ray {:start eye :dir ray-dir}]
