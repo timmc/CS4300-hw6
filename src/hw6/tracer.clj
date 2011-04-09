@@ -37,6 +37,12 @@ are required to reach it."
   [scene ray]
   (filter (complement nil?) (map #(intersect % ray) (:objects scene))))
 
+(defn closest-hit
+  "Find the closest ray hit in the scene, or nil."
+  [hits]
+  (if (seq hits)
+    (reduce (fn closer [h1 h2] (if (< (:dist h1) (:dist h2)) h1 h2)) hits)
+    nil))
 
 (defn render
   [^Graphics2D g, scene, w, h]

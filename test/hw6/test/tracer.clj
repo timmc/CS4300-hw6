@@ -28,7 +28,7 @@
            {:obj unit-sphere, :pt [1 0 0], :dist 1})) ; ...from both sides
     ))
 
-(deftest ray-hit-seq
+(deftest ray-vs-scene
   (let [s0 {:type :sphere, :center [0 0 0], :radius 1} ; [-1 1]
         s3 {:type :sphere, :center [0 3 0], :radius 1} ; [2 4]
         s6 {:type :sphere, :center [0 6 0], :radius 1} ; [5 7]
@@ -40,5 +40,9 @@
     (is (= (ray-hits beads {:start [0 1.5 0] :dir [0 1 0]})
            [{:obj s3 :pt [0 2 0] :dist 0.5}
             {:obj s6 :pt [0 5 0] :dist 3.5}])) ; filter nils
+    (is (= (closest-hit (ray-hits beads {:start [0 -10 0] :dir [0 1 0]}))
+           {:obj s0 :pt [0 -1 0] :dist 9})) ; from one direction...
+    (is (= (closest-hit (ray-hits beads {:start [0 10 0] :dir [0 -20 0]}))
+           {:obj s6 :pt [0 7 0] :dist 3})) ; ...and the other.
     ))
 
