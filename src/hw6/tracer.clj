@@ -32,6 +32,11 @@ are required to reach it."
         (when t
           (assoc (along-ray ray t) :obj obj))))))
 
+(defn ray-hits
+  "Compute a seq of all object intersections in the scene with the given ray."
+  [scene ray]
+  (filter (complement nil?) (map #(intersect % ray) (:objects scene))))
+
 
 (defn render
   [^Graphics2D g, scene, w, h]
