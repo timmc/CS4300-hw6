@@ -45,6 +45,23 @@ are required to reach it."
     nil))
 
 (defn render
-  [^Graphics2D g, scene, w, h]
-  nil)
+  [^Graphics2D g, scene, ^Integer w, ^Integer h]
+  (let [bi (BufferedImage. w h BufferedImage/TYPE_INT_RGB)
+        eye (get-in scene [:camera :pose :start])
+        flipspect (float (- (/ h w)))
+        implane-z (float (- (/ (Math/sqrt 3) 2)))]
+    (doall
+     (for [x (range w)
+           y (range h)]
+       ;; TODO instead, iterate over world points after computing corners
+       (let [image-plane-pt [(- (/ x w) (float 0.5))
+                             (* flipspect (- (/ y w) (float 0.5)))
+                             implane-z]
+             ray-dir (v/xform (get-in scene [:camera :xfrom]) image-plane-pt)
+             pixel-ray {:start eye :dir ray-dir}
+             hits (ray-hits scene pixel-ray)
+             closest (closest-hit hits)]
+         (when closest
+           (.setRGB bi x y 0xFF0000)))))
+    (.drawImage g bi nil 0 0)))
 
