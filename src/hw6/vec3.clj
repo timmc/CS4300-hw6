@@ -1,4 +1,5 @@
-(ns hw6.vec3)
+(ns hw6.vec3
+  (:use [incanter.core :only (matrix mmult mult)]))
 
 ;;; All vectors here are 3-vectors of [x y z]
 
@@ -33,3 +34,13 @@
   [(- (* ay bz) (* az by))
    (- (* az bx) (* ax bz))
    (- (* ax by) (* ay bx))])
+
+(defn xformer
+  "Create a 3x3 transformation matrix from 3 basis vectors."
+  [xb yb zb]
+  (matrix [xb yb zb]))
+
+(defn xform
+  "Rotate, scale, and shear a vector in 3D using a 3x3 matrix."
+  [mat v]
+  (into [] (mmult mat v)))

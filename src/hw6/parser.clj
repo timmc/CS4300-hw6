@@ -128,7 +128,7 @@
         xc (v/cross d [0 1 0])
         xcu (v/unit xc)
         ycu (v/cross zcu xcu)
-        xfrom [xcu ycu zcu]]
+        xfrom (v/xformer xcu ycu zcu)]
     (when (< (v/mag xc) 0.00001) ; TODO revert to older camera
       (throw (Exception. "Camera xc too close to zero.")))
     (assoc camera :pose pose :xfrom xfrom)))
