@@ -46,25 +46,49 @@ are required to reach it."
     (reduce (fn closer [h1 h2] (if (< (:dist h1) (:dist h2)) h1 h2)) hits)
     nil))
 
-(defn image-rays
-  "Returns a seq of cooresponding canvas pixels, points in the image plane, and
-rays from the viewpoint as {:pixel [x y], :pt [x y z], :ray <ray>}."
-  [camera w h]
-  (let [eye (get-in camera [:pose :start])
-        flipspect (float (- (/ h w)))
+(defn pixel->cam-coord
+  "Convert a canvas pixel to an image-plane point in the camera's coordinates."
+  [camera w h x y]
+  (let [flipspect (float (- (/ h w)))
         implane-z (float (- (/ (Math/sqrt 3) 2)))
         pix-mid (float 0.5)]
+    [(- (/ (+ x pix-mid) w) (float 0.5))
+     (* flipspect (- (/ (+ y pix-mid) w) (float 0.5)))
+     implane-z]))
+
+(defn image-rays
+  "Returns a seq of cooresponding canvas pixels, points in the image plane, and
+rays from the viewpoint as {:pixel [x y], :ray <ray>}."
+  [camera w h]
+  #_
+  (let [eye (get-in camera [:pose :start])]
     (for [x (range w)
           y (range h)]
       ;; TODO instead, iterate over world points after computing corners
-      (let [image-plane-pt [(- (/ (+ x pix-mid) w) (float 0.5))
-                            (* flipspect (- (/ (+ y pix-mid) w) (float 0.5)))
-                            implane-z]
-            ray-dir (v/xform (:xfrom camera) image-plane-pt)
-            pixel-ray {:start eye :dir ray-dir}]
+      (let [image-plane-pt (pixel->cam-coord camera w h x y)
+            world-pt (v/xform (:xfrom camera) image-plane-pt)
+            pixel-ray {:start eye :dir (v/<-pts eye world-pt)}]
         {:pixel [x y]
-         :pt image-plane-pt
-         :ray pixel-ray}))))
+         ;; :pt image-plane-pt
+         :ray pixel-ray})))
+  ;; XXX For now, camera is at [0 0 10] with image plane at z=9 and 90 deg FOV
+  (let [altitude 50
+        eye [0 0 altitude]]
+    (for [x (range w)
+          y (range h)]
+      (let [via [(- (/ (+ x (float 0.5)) w) (float 0.5))
+                 (- (/ (+ y (float 0.5)) h) (float 0.5))
+                 (- altitude 1)]]
+        {:pixel [x y] :ray {:start eye :dir (v/<-pts eye via)}}))))
+
+(defn ray->rgb
+  "Given a scene and a ray, produce an [r g b] intensity value."
+  [scene ray]
+  (let [hits (ray-hits scene ray)
+        closest (closest-hit hits)]
+    (if closest
+      [1 0 0]
+      [0 0 0])))
 
 (defn rgb->int
   "Given an [r g b] intensity, clamp components to unit range and produce an
@@ -79,11 +103,8 @@ RGB int."
   [^Graphics2D g, scene, ^Integer w, ^Integer h]
   (let [bi (BufferedImage. w h BufferedImage/TYPE_INT_RGB)]
     (doseq [{[vx vy] :pixel
-             image-pt :pt
              pixel-ray :ray} (image-rays (:camera scene) w h)]
-      (let [hits (ray-hits scene pixel-ray)
-            closest (closest-hit hits)]
-        (when closest
-          (.setRGB bi vx vy 0xFF0000)))
+      (let [rgb (ray->rgb scene pixel-ray)]
+        (.setRGB bi vx vy (rgb->int rgb)))
       (.drawImage g bi nil 0 0))))
 
