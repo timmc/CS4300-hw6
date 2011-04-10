@@ -106,23 +106,23 @@
 
 (defmulti expand-object
   "Expand an object based on other scene data."
-  (fn [scene obj] (:type obj)))
-(defmethod expand-object :sphere [scene sphere]
+  (fn [obj scene] (:type obj)))
+(defmethod expand-object :sphere [sphere scene]
   (let [vert (get-vertex scene (:i sphere))
         radius (v/mag (:dir vert))]
     (assoc sphere :center (:start vert) :radius radius)))
-(defmethod expand-object :plane [scene plane]
+(defmethod expand-object :plane [plane scene]
   (let [vert (get-vertex scene (:i plane))]
     (assoc plane :pose vert)))
-(defmethod expand-object :triangle [scene triangle]
+(defmethod expand-object :triangle [triangle scene]
   (assoc triangle
     :v0 (get-vertex scene (:i triangle))
     :v1 (get-vertex scene (:j triangle))
     :v2 (get-vertex scene (:k triangle))))
 
-(defn expand-light [scene light]
+(defn expand-light [light scene]
   (assoc light :pose (get-vertex scene (:i light))))
-(defn expand-camera [scene camera]
+(defn expand-camera [camera scene]
   (let [{d :dir :as pose} (get-vertex scene (:i camera))
         zcu (v/unit (v/scale d -1))
         xc (v/cross d [0 1 0])
@@ -137,9 +137,9 @@
   "Fill in vertex values by index, etc."
   [scene]
   (-> scene
-      (update-in ,,, [:objects] #(map (partial expand-object scene) %))
-      (update-in ,,, [:lights] #(map (partial expand-light scene) %))
-      (update-in ,,, [:camera] #(expand-camera scene %))))
+      (update-in ,,, [:objects] (fn [o] (map #(expand-object % scene) o)))
+      (update-in ,,, [:lights] (fn [l] (map #(expand-light % scene) l)))
+      (update-in ,,, [:camera] expand-camera scene)))
 
 ;;;; Main loop
 
