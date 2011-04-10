@@ -3,7 +3,7 @@
   (:import (java.awt Graphics2D)
            (java.awt.image BufferedImage)))
 
-;;; A ray is a {:start [x y z] :dir [x y z]}
+;;; A ray is a {:start [x y z] :dir [x y z] :bounces 0}
 ;;; An intersection is a {:obj <obj>, :pt [x y z], :dist f, :normal <unitvec>}
 
 (defn along-ray
@@ -67,7 +67,7 @@ rays from the viewpoint as {:pixel [x y], :ray <ray>}."
       ;; TODO instead, iterate over world points after computing corners
       (let [image-plane-pt (pixel->cam-coord camera w h x y)
             world-pt (v/xform (:xfrom camera) image-plane-pt)
-            pixel-ray {:start eye :dir (v/<-pts eye world-pt)}]
+            pixel-ray {:start eye :dir (v/<-pts eye world-pt) :bounces 0}]
         {:pixel [x y]
          ;; :pt image-plane-pt
          :ray pixel-ray})))
@@ -79,7 +79,7 @@ rays from the viewpoint as {:pixel [x y], :ray <ray>}."
       (let [via [(- (/ (+ x (float 0.5)) w) (float 0.5))
                  (- (/ (+ y (float 0.5)) h) (float 0.5))
                  (- altitude 1)]]
-        {:pixel [x y] :ray {:start eye :dir (v/<-pts eye via)}}))))
+        {:pixel [x y] :ray {:start eye :dir (v/<-pts eye via) :bounces 0}}))))
 
 (defn ray->rgb
   "Given a scene and a ray, produce an [r g b] intensity value."
