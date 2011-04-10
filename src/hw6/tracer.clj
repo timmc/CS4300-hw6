@@ -66,6 +66,15 @@ rays from the viewpoint as {:pixel [x y], :pt [x y z], :ray <ray>}."
          :pt image-plane-pt
          :ray pixel-ray}))))
 
+(defn rgb->int
+  "Given an [r g b] intensity, clamp components to unit range and produce an
+RGB int."
+  [[r g b]]
+  (let [convert-comp (fn [c] (max 0 (min 255 (int (* 255 c)))))]
+    (+ (bit-shift-left (convert-comp r) 16)
+       (bit-shift-left (convert-comp g) 8)
+       (convert-comp b))))
+
 (defn render
   [^Graphics2D g, scene, ^Integer w, ^Integer h]
   (let [bi (BufferedImage. w h BufferedImage/TYPE_INT_RGB)]
