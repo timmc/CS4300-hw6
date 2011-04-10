@@ -13,6 +13,8 @@ are required to reach it."
   (let [v (v/scale (:dir ray) t)]
     {:pt (v/sum v (:start ray)), :dist (v/mag v)}))
 
+;;;; Intersections
+
 (defmulti intersect
   "Intersect an object and a ray. Return the first intersection or nil."
   (fn [o r] (:type o)))
@@ -81,16 +83,54 @@ rays from the viewpoint as {:pixel [x y], :ray <ray>}."
                  (- altitude 1)]]
         {:pixel [x y] :ray {:start eye :dir (v/<-pts eye via) :bounces 0}}))))
 
+;;;; Lighting
+
+(defn ambient
+  "Calculate the [r g b] ambient lighting component of a ray intersection."
+  [scene ray interx]
+  (let [amb-color (-> interx :obj :material :ambient :color)
+        amb-comp (v/scale amb-color (-> scene :settings :ambient))]
+    amb-comp))
+
+(defn inbound-light-vec
+  "Determine the unit direction vector of an inbound light source given
+an [x y z] pt and a unit normal vector."
+  [light pt]
+  (condp = (:type light)
+      :directional (v/unit (-> light :pose :dir))
+      :point (v/unit (v/<-pts (-> light :pose :start) pt))))
+
+(defn diffuse-1
+  "Given a single light and an intersection, produce the color contribution."
+  [scene ray interx diffuse-mat light]
+  (let [to-light (v/neg (inbound-light-vec light (:pt interx)))
+        cos (v/dot (:normal interx) to-light)]
+    ;; TODO shadows
+    (if (neg? cos)
+      [0 0 0]
+      (let [I (:I light)
+            dc (:color diffuse-mat)]
+        ;; Using a white light source, a.k.a. [I I I]
+        ;; Otherwise we would do (v/scale (v/elop * light-color mat-color) cos)
+        (v/scale dc (* I cos))))))
+
+(defn diffuse
+  "Calculate the [r g b] diffuse lighting component of a ray intersection."
+  [scene ray interx]
+  (if (-> scene :settings :diffuse?)
+    (let [diff-mat (-> interx :obj :material :diffuse)]
+      (apply v/sum (map (partial diffuse-1 scene ray interx diff-mat)
+                        (:lights scene))))
+    [0 0 0]))
+
 (defn ray->rgb
   "Given a scene and a ray, produce an [r g b] intensity value."
   [scene ray]
   (let [hits (ray-hits scene ray)
         interx (closest-hit hits)]
     (if interx
-      (let [material (-> interx :obj :material)
-            amb-color (replace (:ambient material) [:r :g :b])
-            amb-comp (v/scale amb-color (-> scene :settings :ambient))]
-        amb-comp)
+      (v/sum (ambient scene ray interx)
+             (diffuse scene ray interx))
       [0 0 0])))
 
 (defn rgb->int
@@ -101,6 +141,8 @@ RGB int."
     (+ (bit-shift-left (convert-comp r) 16)
        (bit-shift-left (convert-comp g) 8)
        (convert-comp b))))
+
+;;;; Main loop
 
 (defn render
   [^Graphics2D g, scene, ^Integer w, ^Integer h]

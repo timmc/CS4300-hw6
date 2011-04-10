@@ -4,8 +4,8 @@
 
 ;;; All data represented as maps:
 ;;; - vertex is {:start [x y z] :dir [x y z]}
-;;; - material is :ambient={:r :g :b} :diffuse={:r :g :b}
-;;;     :specular={:r :g :b :p}
+;;; - material is :ambient={:color=[r g b]} :diffuse={:color=[r g b]}
+;;;     :specular={:color=[r g b] :exp=int}
 ;;; - settings is :diffuse? :specular? :shadows? :mirror-limit :ambient
 ;;; - camera is :i => :pose=vertex :xfrom=3x3mat (from camera to world)
 ;;; - light is :type=#{:point :directional} :I :i => :pose=vertex
@@ -34,9 +34,9 @@
               :ambient-intensity 1.0}
    :lights []
    :objects []
-   :last-material {:ambient {:r 0.2 :g 0.2 :b 0.2}
-                   :diffuse {:r 1.0 :g 1.0 :b 1.0}
-                   :specular {:r 1.0 :g 1.0 :b 1.0 :p 64}}})
+   :last-material {:ambient {:color [0.2 0.2 0.2]}
+                   :diffuse {:color [1.0 1.0 1.0]}
+                   :specular {:color [1.0 1.0 1.0] :exp 64}}})
 
 (defn parse-float [x] (Float/parseFloat x))
 (defn parse-int [x] (Integer/parseInt x 10))
@@ -58,16 +58,16 @@
 (defmethod parse-line "am" [scene _ & args]
   (let [[r g b] (map parse-float args)]
     (assoc-in scene [:last-material :ambient]
-              {:r r :g g :b b})))
+              {:color [r g b]})))
 (defmethod parse-line "dm" [scene _ & args]
   (let [[r g b] (map parse-float args)]
     (assoc-in scene [:last-material :diffuse]
-              {:r r :g g :b b})))
+              {:color [r g b]})))
 (defmethod parse-line "sm" [scene _ r g b p]
   (let [[r g b] (map parse-float [r g b])
         p (parse-int p)]
     (assoc-in scene [:last-material :specular]
-              {:r r :g g :b b :p p})))
+              {:color [r g b] :exp p})))
 ;; objects
 (defmethod parse-line "ss" [scene _ i]
   (update-in scene [:objects] conj
