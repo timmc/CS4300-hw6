@@ -87,8 +87,10 @@ rays from the viewpoint as {:pixel [x y], :ray <ray>}."
   (let [hits (ray-hits scene ray)
         interx (closest-hit hits)]
     (if interx
-      (let [amb (-> interx :obj :material :ambient)]
-        (replace amb [:r :g :b]))
+      (let [material (-> interx :obj :material)
+            amb-color (replace (:ambient material) [:r :g :b])
+            amb-comp (v/scale amb-color (-> scene :settings :ambient))]
+        amb-comp)
       [0 0 0])))
 
 (defn rgb->int
