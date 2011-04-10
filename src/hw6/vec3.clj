@@ -20,8 +20,22 @@
 
 (defn sum
   "Compute sum of two vectors."
-  [[ax ay az] [bx by bz]]
-  [(+ ax bx) (+ ay by) (+ az bz)])
+  ([] [0 0 0])
+  ([v] v)
+  ([[ax ay az] [bx by bz]]
+     [(+ ax bx) (+ ay by) (+ az bz)])
+  ([a b & more]
+     (reduce sum (sum a b) more)))
+
+(defn diff
+  "Convenience method for vector subtraction."
+  [a b]
+  (sum a (scale b -1)))
+
+(defn <-pts
+  "Compute a vector from start and end [x y z] points."
+  [start end]
+  (diff end start))
 
 (defn dot
   "Compute the dot product of two vectors."
