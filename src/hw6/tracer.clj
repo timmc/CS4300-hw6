@@ -4,6 +4,7 @@
            (java.awt.image BufferedImage)))
 
 ;;; A ray is a {:start [x y z] :dir [x y z]}
+;;; An intersection is a {:obj <obj>, :pt [x y z], :dist f, :normal <unitvec>}
 
 (defn along-ray
   "Compute {:pt, :dist} on a ray based on the number of multiples of :dir that
@@ -13,8 +14,7 @@ are required to reach it."
     {:pt (v/sum v (:start ray)), :dist (v/mag v)}))
 
 (defmulti intersect
-  "Intersect an object and a ray. Return the first intersection as {:obj, :pt,
-:dist}, or nil. "
+  "Intersect an object and a ray. Return the first intersection or nil."
   (fn [o r] (:type o)))
 (defmethod intersect :default [_ _] nil)
 (defmethod intersect :sphere [{r :radius c :center :as obj}
@@ -30,7 +30,9 @@ are required to reach it."
             [t1 t2] (if (< t1 t2) [t1 t2] [t2 t1])
             t (when (> t2 0) (if (> t1 0) t1 t2))]
         (when t
-          (assoc (along-ray ray t) :obj obj))))))
+          (let [{pt :pt, dist :dist} (along-ray ray t)
+                normal (v/unit (v/<-pts c pt))]
+            {:obj obj, :pt pt, :dist dist, :normal normal}))))))
 
 (defn ray-hits
   "Compute a seq of all object intersections in the scene with the given ray."
