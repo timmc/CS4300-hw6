@@ -13,6 +13,11 @@
   [[x y z] s]
   [(* x s) (* y s) (* z s)]) ; or (map (partial * s) v)
 
+(defn neg
+  "Negate a vector's direction."
+  [v]
+  (scale v -1))
+
 (defn unit
   "Compute the unit vector in the same direction."
   [v]
@@ -48,6 +53,11 @@
   [(- (* ay bz) (* az by))
    (- (* az bx) (* ax bz))
    (- (* ax by) (* ay bx))])
+
+(defn elop
+  "Map an operator across the corresponding elements of multiple vectors."
+  [op & vs]
+  (vec (apply map op vs)))
 
 (defn xformer
   "Create a 3x3 transformation matrix from 3 basis vectors."
