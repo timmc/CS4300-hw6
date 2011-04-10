@@ -85,9 +85,10 @@ rays from the viewpoint as {:pixel [x y], :ray <ray>}."
   "Given a scene and a ray, produce an [r g b] intensity value."
   [scene ray]
   (let [hits (ray-hits scene ray)
-        closest (closest-hit hits)]
-    (if closest
-      [1 0 0]
+        interx (closest-hit hits)]
+    (if interx
+      (let [amb (-> interx :obj :material :ambient)]
+        (replace amb [:r :g :b]))
       [0 0 0])))
 
 (defn rgb->int
