@@ -35,6 +35,20 @@ are required to reach it."
           (let [{pt :pt, dist :dist} (along-ray ray t)
                 normal (v/unit (v/<-pts c pt))]
             {:obj obj, :pt pt, :dist dist, :normal normal}))))))
+(defmethod intersect :plane [{pt :pt normal :normal :as obj}
+                             {q :start d :dir :as ray}]
+  (let [unormal (v/unit normal)
+        dist-origin (v/dot unormal pt)
+        angle-from-perp (v/dot d unormal)]
+    (if (zero? angle-from-perp)
+      nil
+      (let [t (/ (- dist-origin (v/dot q unormal)) angle-from-perp)]
+        (when (pos? t)
+          (let [{pt :pt, dist :dist} (along-ray ray t)
+                ;; Pick the normal that bounces back against the ray
+                norm-sigmult (- (Math/signum (double angle-from-perp)))
+                unormal (v/scale unormal norm-sigmult)]
+            {:obj obj, :pt pt, :dist dist, :normal unormal}))))))
 
 (defn ray-hits
   "Compute a seq of all object intersections in the scene with the given ray."

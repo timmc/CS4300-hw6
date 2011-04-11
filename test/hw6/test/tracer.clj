@@ -43,6 +43,27 @@
     (is (= (intersect sphere2345 {:start [3 4 10] :dir [0 0 -5] :bounces 0})
            {:obj sphere2345 :pt [3 4 7] :dist 3 :normal [0 0 1]}))))
 
+(deftest intersect-plane
+  (let [plane5 {:type :plane :pt [30 40 5] :normal [0 0 5]}]
+    ;; from below...
+    (is (= (intersect plane5 {:start [0 0 0] :dir [0 0 1]})
+           {:obj plane5 :pt [0 0 5] :dist 5 :normal [0 0 -1]}))
+    ;; ...and above (notice flipped normal)
+    (is (= (intersect plane5 {:start [0 0 10] :dir [0 0 -1]})
+           {:obj plane5 :pt [0 0 5] :dist 5 :normal [0 0 1]}))
+    ;; no negative intersect
+    (is (= (intersect plane5 {:start [0 0 0] :dir [0 0 -1]})
+           nil))
+    ;; no parallel intersect
+    (is (= (intersect plane5 {:start [0 0 0] :dir [1 13 0]})
+           nil)))
+  (let [plane210 {:type :plane :pt [1 3 0] :normal [2 1 0]}
+        inter-x (intersect plane210 {:start [0 0 0] :dir [100 0 0]})]
+    (is (= (map cut (:pt inter-x)) [2.5 0 0]))
+    (is (= (cut (:dist inter-x)) 2.5))
+    (is (= (map cut (:normal inter-x))
+           (map cut (v/unit [-2 -1 0]))))))
+
 (deftest ray-vs-scene
   (let [s0 {:type :sphere, :center [0 0 0], :radius 1} ; [-1 1]
         s3 {:type :sphere, :center [0 3 0], :radius 1} ; [2 4]
