@@ -12,7 +12,7 @@
 ;;;   - :point also has :source (from :i=>vertex)
 ;;;   - :directional also has :direction (from :i=>vertex)
 ;;; - object is :type=#{:sphere :plane :triangle} :material=material + more
-;;;   - :plane also has :i => :pose=vertex
+;;;   - :plane also has :i => :pt=[x y z] :normal=[x y z]
 ;;;   - :triangle also has :i :j :k => :v0 :v1 :v2 (all vert/normals)
 ;;;   - :sphere also has :i => :center=[x y z] :radius=float
 
@@ -115,7 +115,7 @@
     (assoc sphere :center (:start vert) :radius radius)))
 (defmethod expand-object :plane [plane scene]
   (let [vert (get-vertex scene (:i plane))]
-    (assoc plane :pose vert)))
+    (assoc plane :pt (:start vert) :normal (:dir vert))))
 (defmethod expand-object :triangle [triangle scene]
   (assoc triangle
     :v0 (get-vertex scene (:i triangle))

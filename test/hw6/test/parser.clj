@@ -13,6 +13,16 @@
   (is (= (parse-line {:objects []} "ss" "2")
          {:objects [{:type :sphere :i 2 :material nil}]})))
 
+(deftest planes
+  (let [scene {:objects []
+               :last-material nil
+               :vertices [{:start [0 1 2] :dir [3 4 5]}]}
+        parse-0 (parse-line scene "ps" "0")
+        plane-basic (first (:objects parse-0))]
+    (is (= (:objects parse-0) [{:type :plane :i 0 :material nil}]))
+    (is (= (expand-object plane-basic parse-0)
+           {:type :plane :i 0 :material nil :pt [0 1 2] :normal [3 4 5]}))))
+
 (deftest single-sphere
   (let [parsed (parse ["vv -10 75 60 1 -7.5 -6"
                        "cc 0"
