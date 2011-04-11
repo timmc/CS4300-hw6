@@ -190,11 +190,15 @@ RGB int."
 ;;;; Main loop
 
 (defn render
-  [^Graphics2D g, scene, ^Integer w, ^Integer h]
-  (let [bi (BufferedImage. w h BufferedImage/TYPE_INT_RGB)]
+  [scene, ^BufferedImage bi, render-status]
+  (let [w (.getWidth bi)
+        h (.getHeight bi)]
+    (dosync (ref-set render-status
+                     (assoc @render-status :status :working)))
     (doseq [{[vx vy] :pixel
              pixel-ray :ray} (image-rays (:camera scene) w h)]
       (let [rgb (ray->rgb scene pixel-ray)]
-        (.setRGB bi vx vy (rgb->int rgb)))
-      (.drawImage g bi nil 0 0))))
+        (.setRGB bi vx vy (rgb->int rgb))))
+    (dosync (ref-set render-status
+                     (assoc @render-status :status :done)))))
 

@@ -4,16 +4,31 @@
             [hw6.tracer :as rt])
   (:import (java.io BufferedReader StringReader InputStreamReader)
            (java.awt Dimension Graphics2D)
+           (java.awt.image BufferedImage)
            (javax.swing JComponent JFrame UIManager SwingUtilities))
   (:gen-class))
 
 
+(def ^{:doc "Scene render progress map. :status may be :init, :working, or
+:done, and :completion is a float from [0 1]."}
+  *render-status* (ref {:status :init, :completion 0}))
+
+(defn start-render
+  "Start a renderer writing to the given BufferedImage."
+  [scene, bi, ^JComponent canvas]
+  (future (rt/render scene bi *render-status*)
+          ;; one final repaint to catch the last bit of data.
+          (.repaint canvas)))
+
 (defn make-canvas
   "Make a canvas that renders once."
-  [scene settings]
+  [scene bi settings]
   (let [jc (proxy [JComponent] []
 	     (paint [^Graphics2D g]
-               (rt/render g scene (.getWidth this) (.getHeight this)))
+               (.drawImage g bi nil 0 0)
+               (when-not (= (:status @*render-status*) :done)
+                 (future (Thread/sleep 300)
+                         (.repaint this))))
              (update [_]))]
     (doto jc
       (.setDoubleBuffered true)
@@ -23,10 +38,14 @@
   "Open a window and render the scene."
   [scene settings]
   (UIManager/setLookAndFeel (UIManager/getSystemLookAndFeelClassName))
-  (let [fr (JFrame. "CS4300 HW6 - TimMc")]
+  (let [{w :w h :h} settings
+        fr (JFrame. "CS4300 HW6 - TimMc")
+        bi (BufferedImage. w h BufferedImage/TYPE_INT_RGB)
+        canvas (make-canvas scene bi settings)]
+    (start-render scene bi canvas)
     (doto fr
-      (.setDefaultCloseOperation JFrame/DISPOSE_ON_CLOSE)
-      (.add (make-canvas scene settings))
+      (.setDefaultCloseOperation JFrame/EXIT_ON_CLOSE)
+      (.add canvas)
       (.pack)
       (.setResizable false)
       (.setVisible true))))
