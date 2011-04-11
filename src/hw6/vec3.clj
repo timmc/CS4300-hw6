@@ -59,6 +59,11 @@
   [op & vs]
   (vec (apply map op vs)))
 
+(defn avg
+  "Average multiple vectors together."
+  [& vs]
+  (scale (apply sum vs) (/ (count vs))))
+
 (defn xformer
   "Create a 3x3 transformation matrix from 3 basis vectors."
   [xb yb zb]
