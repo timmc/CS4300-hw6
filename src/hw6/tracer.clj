@@ -128,7 +128,7 @@ implements Lambertian shading."
                         (:lights scene))))
     [0 0 0]))
 
-(defn specular-1
+(defn specular-1 ;; FIXME way too dim for point source
   "Given a single light and an intersection, produce the specular color
 contribution."
   [scene ray interx specular-mat light]
