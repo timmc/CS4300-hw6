@@ -1,6 +1,7 @@
 (ns hw6.test.vec3
   (:use [hw6.vec3])
-  (:use [clojure.test]))
+  (:use [clojure.test])
+  (:require [incanter.core :as i]))
 
 (deftest vectmath
   (is (= (mag [3 4 0]) 5))
@@ -16,4 +17,11 @@
   (is (= (cross [3 4 0] [-4 3 0]) [0 0 25]))
   (is (= (elop * [0 11 100] [1 2 3]) [0 22 300]))
   (is (= (avg [2 4 6] [0 9 5] [1 11 -2]) [1 8 3]))
-  (is (= (unit [3 4 0]) [3/5 4/5 0])))
+  (is (= (unit [3 4 0]) [3/5 4/5 0]))
+  (is (= (xformer [1 2 3] [44 55 66] [-701 -702 -703])
+         (i/matrix [[1 44 -701]
+                    [2 55 -702]
+                    [3 66 -703]])))
+  (is (= (xform (xformer [0 1 0] [1 0 0] [0 0 1])
+                [1 2 3])
+         [2 1 3])))
