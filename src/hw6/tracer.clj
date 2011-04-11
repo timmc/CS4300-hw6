@@ -101,7 +101,8 @@ an [x y z] pt and a unit normal vector."
       :point (v/unit (v/<-pts (-> light :pose :start) pt))))
 
 (defn diffuse-1
-  "Given a single light and an intersection, produce the color contribution."
+  "Given a single light and an intersection, produce the diffuse color
+contribution."
   [scene ray interx diffuse-mat light]
   (let [to-light (v/neg (inbound-light-vec light (:pt interx)))
         cos (v/dot (:normal interx) to-light)]
@@ -115,11 +116,40 @@ an [x y z] pt and a unit normal vector."
         (v/scale dc (* I cos))))))
 
 (defn diffuse
-  "Calculate the [r g b] diffuse lighting component of a ray intersection."
+  "Calculate the [r g b] diffuse lighting component of a ray intersection. This
+implements Lambertian shading."
   [scene ray interx]
   (if (-> scene :settings :diffuse?)
     (let [diff-mat (-> interx :obj :material :diffuse)]
       (apply v/sum (map (partial diffuse-1 scene ray interx diff-mat)
+                        (:lights scene))))
+    [0 0 0]))
+
+(defn specular-1
+  "Given a single light and an intersection, produce the specular color
+contribution."
+  [scene ray interx specular-mat light]
+  (let [to-light (v/neg (inbound-light-vec light (:pt interx)))
+        to-viewer (v/unit (v/neg (:dir ray)))
+        halfway (v/avg to-light to-viewer)
+        cos (v/dot (:normal interx) halfway)]
+    ;; TODO shadows
+    (if (neg? cos)
+      [0 0 0]
+      (let [cosp (Math/pow cos (:exp specular-mat))
+            I (:I light)
+            sc (:color specular-mat)]
+        ;; Using a white light source, a.k.a. [I I I]
+        ;; Otherwise we would do (v/scale (v/elop * light-color mat-color) cosp)
+        (v/scale sc (* I cosp))))))
+
+(defn specular
+  "Calulate the [r g b] specular lighting component of a ray intersection. This
+implements Blinn-Phong shading."
+  [scene ray interx]
+  (if (-> scene :settings :specular?)
+    (let [spec-mat (-> interx :obj :material :specular)]
+      (apply v/sum (map (partial specular-1 scene ray interx spec-mat)
                         (:lights scene))))
     [0 0 0]))
 
@@ -130,7 +160,8 @@ an [x y z] pt and a unit normal vector."
         interx (closest-hit hits)]
     (if interx
       (v/sum (ambient scene ray interx)
-             (diffuse scene ray interx))
+             (diffuse scene ray interx)
+             (specular scene ray interx))
       [0 0 0])))
 
 (defn rgb->int
