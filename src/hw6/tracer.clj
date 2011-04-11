@@ -71,37 +71,28 @@ are required to reach it."
   (let [flipspect (float (- (/ h w)))
         ;; Use the center of each pixel
         pix-mid (float 0.5)
+        half-plane (float 0.5)
         ;; half plane and half FOV
         half-fov (* Math/PI (/ (/ *camera-fov* 2) 180)) ; in radians now
-        implane-z (- (/ 1/2 (Math/tan half-fov)))]
-    [(- (/ (+ x pix-mid) w) (float 0.5))
-     (* flipspect (- (/ (+ y pix-mid) h) (float 0.5)))
+        implane-z (- (/ half-plane (Math/tan half-fov)))]
+    [(- (/ (+ x pix-mid) w) half-plane)
+     (* flipspect (- (/ (+ y pix-mid) h) half-plane))
      implane-z]))
 
 (defn image-rays
   "Returns a seq of cooresponding canvas pixels, points in the image plane, and
 rays from the viewpoint as {:pixel [x y], :ray <ray>}."
   [camera w h]
-  #_
   (let [eye (get-in camera [:pose :start])]
-    (for [x (range w)
-          y (range h)]
+    (for [y (range h)
+          x (range w)]
       ;; TODO instead, iterate over world points after computing corners
       (let [image-plane-pt (pixel->cam-coord w h x y)
             world-pt (v/xform (:xfrom camera) image-plane-pt)
-            pixel-ray {:start eye :dir (v/<-pts eye world-pt) :bounces 0}]
+            pixel-ray {:start eye :dir world-pt :bounces 0}]
         {:pixel [x y]
          ;; :pt image-plane-pt
-         :ray pixel-ray})))
-  ;; XXX For now, camera is at [0 0 10] with image plane at z=9 and 90 deg FOV
-  (let [altitude 50
-        eye [0 0 altitude]]
-    (for [x (range w)
-          y (range h)]
-      (let [via [(- (/ (+ x (float 0.5)) w) (float 0.5))
-                 (- (- (/ (+ y (float 0.5)) h) (float 0.5)))
-                 (- altitude 1)]]
-        {:pixel [x y] :ray {:start eye :dir (v/<-pts eye via) :bounces 0}}))))
+         :ray pixel-ray}))))
 
 ;;;; Lighting
 
