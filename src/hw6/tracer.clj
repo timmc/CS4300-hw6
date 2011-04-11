@@ -62,12 +62,17 @@ are required to reach it."
     (reduce (fn closer [h1 h2] (if (< (:dist h1) (:dist h2)) h1 h2)) hits)
     nil))
 
+(def ^{:doc "Camera's field of view in degrees." :dynamic true}
+  *camera-fov* 60)
+
 (defn pixel->cam-coord
   "Convert a canvas pixel to an image-plane point in the camera's coordinates."
-  [camera w h x y]
+  [w h x y]
   (let [flipspect (float (- (/ h w)))
-        implane-z (float (- (/ (Math/sqrt 3) 2)))
-        pix-mid (float 0.5)]
+        pix-mid (float 0.5)
+        ;; half plane and half FOV
+        half-fov (* Math/PI (/ (/ *camera-fov* 2) 180)) ; in radians now
+        implane-z (- (/ 1/2 (Math/tan half-fov)))]
     [(- (/ (+ x pix-mid) w) (float 0.5))
      (* flipspect (- (/ (+ y pix-mid) w) (float 0.5)))
      implane-z]))
@@ -81,7 +86,7 @@ rays from the viewpoint as {:pixel [x y], :ray <ray>}."
     (for [x (range w)
           y (range h)]
       ;; TODO instead, iterate over world points after computing corners
-      (let [image-plane-pt (pixel->cam-coord camera w h x y)
+      (let [image-plane-pt (pixel->cam-coord w h x y)
             world-pt (v/xform (:xfrom camera) image-plane-pt)
             pixel-ray {:start eye :dir (v/<-pts eye world-pt) :bounces 0}]
         {:pixel [x y]

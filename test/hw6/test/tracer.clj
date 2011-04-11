@@ -87,6 +87,15 @@
                                   {:start [0 10 0] :dir [0 -20 0] :bounces 0}))
            {:obj s6 :pt [0 7 0] :dist 3 :normal [0 1 0]}))))
 
+(deftest cam-coords
+  (binding [*camera-fov* 90]
+    (is (= (map cut (pixel->cam-coord 3 3 1 1))
+           (map cut [0 0 (- 1/2)])))
+    (is (= (map cut (pixel->cam-coord 3 3 0 1))
+           (map cut [(- 1/3) 0 (- 1/2)])))
+    (is (= (map cut (pixel->cam-coord 3 3 2 2))
+           (map cut [1/3 (- 1/3) (- 1/2)])))))
+
 (deftest colors
   (is (= (rgb->int [1 0 0.2]) 0xFF0033))
   (is (= (rgb->int [1.1 0.2 -5]) 0xFF3300)))
