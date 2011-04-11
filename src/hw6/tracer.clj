@@ -69,12 +69,13 @@ are required to reach it."
   "Convert a canvas pixel to an image-plane point in the camera's coordinates."
   [w h x y]
   (let [flipspect (float (- (/ h w)))
+        ;; Use the center of each pixel
         pix-mid (float 0.5)
         ;; half plane and half FOV
         half-fov (* Math/PI (/ (/ *camera-fov* 2) 180)) ; in radians now
         implane-z (- (/ 1/2 (Math/tan half-fov)))]
     [(- (/ (+ x pix-mid) w) (float 0.5))
-     (* flipspect (- (/ (+ y pix-mid) w) (float 0.5)))
+     (* flipspect (- (/ (+ y pix-mid) h) (float 0.5)))
      implane-z]))
 
 (defn image-rays

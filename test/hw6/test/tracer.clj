@@ -89,12 +89,12 @@
 
 (deftest cam-coords
   (binding [*camera-fov* 90]
-    (is (= (map cut (pixel->cam-coord 3 3 1 1))
+    ;; middle
+    (is (= (map cut (pixel->cam-coord 3 5 1 2))
            (map cut [0 0 (- 1/2)])))
-    (is (= (map cut (pixel->cam-coord 3 3 0 1))
-           (map cut [(- 1/3) 0 (- 1/2)])))
-    (is (= (map cut (pixel->cam-coord 3 3 2 2))
-           (map cut [1/3 (- 1/3) (- 1/2)])))))
+    ;; upper left
+    (is (= (map cut (pixel->cam-coord 3 5 0 0))
+           (map cut [(- 1/3) (* 2/5 5/3) (- 1/2)])))))
 
 (deftest colors
   (is (= (rgb->int [1 0 0.2]) 0xFF0033))
