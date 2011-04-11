@@ -8,7 +8,9 @@
 ;;;     :specular={:color=[r g b] :exp=int}
 ;;; - settings is :diffuse? :specular? :shadows? :mirror-limit :ambient
 ;;; - camera is :i => :pose=vertex :xfrom=3x3mat (from camera to world)
-;;; - light is :type=#{:point :directional} :I :i => :pose=vertex
+;;; - light is :type=#{:point :directional} :I :i
+;;;   - :point also has :source (from :i=>vertex)
+;;;   - :directional also has :direction (from :i=>vertex)
 ;;; - object is :type=#{:sphere :plane :triangle} :material=material + more
 ;;;   - :plane also has :i => :pose=vertex
 ;;;   - :triangle also has :i :j :k => :v0 :v1 :v2 (all vert/normals)
@@ -121,7 +123,10 @@
     :v2 (get-vertex scene (:k triangle))))
 
 (defn expand-light [light scene]
-  (assoc light :pose (get-vertex scene (:i light))))
+  (let [vertex (get-vertex scene (:i light))]
+    (condp = (:type light)
+        :point (assoc light :source (:start vertex))
+        :directional (assoc light :direction (:dir vertex)))))
 (defn expand-camera [camera scene]
   (let [{d :dir :as pose} (get-vertex scene (:i camera))
         zcu (v/unit (v/scale d -1))

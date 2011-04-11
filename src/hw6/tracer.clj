@@ -92,19 +92,22 @@ rays from the viewpoint as {:pixel [x y], :ray <ray>}."
         amb-comp (v/scale amb-color (-> scene :settings :ambient))]
     amb-comp))
 
-(defn inbound-light-vec
+(defmulti light-to
   "Determine the unit direction vector of an inbound light source given
 an [x y z] pt and a unit normal vector."
+  (fn [light pt] (:type light)))
+(defmethod light-to :directional
   [light pt]
-  (condp = (:type light)
-      :directional (v/unit (-> light :pose :dir))
-      :point (v/unit (v/<-pts (-> light :pose :start) pt))))
+  (v/unit (:direction light)))
+(defmethod light-to :point
+  [light pt]
+  (v/unit (v/<-pts (:source light) pt)))
 
 (defn diffuse-1
   "Given a single light and an intersection, produce the diffuse color
 contribution."
   [scene ray interx diffuse-mat light]
-  (let [to-light (v/neg (inbound-light-vec light (:pt interx)))
+  (let [to-light (v/neg (light-to light (:pt interx)))
         cos (v/dot (:normal interx) to-light)]
     ;; TODO shadows
     (if (neg? cos)
@@ -129,7 +132,7 @@ implements Lambertian shading."
   "Given a single light and an intersection, produce the specular color
 contribution."
   [scene ray interx specular-mat light]
-  (let [to-light (v/neg (inbound-light-vec light (:pt interx)))
+  (let [to-light (v/neg (light-to light (:pt interx)))
         to-viewer (v/unit (v/neg (:dir ray)))
         halfway (v/avg to-light to-viewer)
         cos (v/dot (:normal interx) halfway)]

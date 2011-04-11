@@ -1,6 +1,8 @@
 (ns hw6.test.tracer
   (:use [hw6.tracer])
   (:use [clojure.test])
+  (:require [hw6.parser :as p])
+  (:require [hw6.vec3 :as v])
   (:import (java.math BigDecimal RoundingMode)))
 
 ;; From hw4 test utils
@@ -67,3 +69,12 @@
 (deftest colors
   (is (= (rgb->int [1 0 0.2]) 0xFF0033))
   (is (= (rgb->int [1.1 0.2 -5]) 0xFF3300)))
+
+(deftest light-dir
+  (is (= (light-to {:type :point :source [103 504 0]}
+                   [100 500 0])
+         [(- 3/5) (- 4/5) 0]))
+  (is (= (light-to {:type :directional :direction [3 0 4]}
+                   [100 200 300])
+         [3/5 0 4/5])))
+
