@@ -79,7 +79,7 @@ rays from the viewpoint as {:pixel [x y], :ray <ray>}."
     (for [x (range w)
           y (range h)]
       (let [via [(- (/ (+ x (float 0.5)) w) (float 0.5))
-                 (- (/ (+ y (float 0.5)) h) (float 0.5))
+                 (- (- (/ (+ y (float 0.5)) h) (float 0.5)))
                  (- altitude 1)]]
         {:pixel [x y] :ray {:start eye :dir (v/<-pts eye via) :bounces 0}}))))
 
