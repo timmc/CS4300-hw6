@@ -110,33 +110,48 @@
   "Expand an object based on other scene data."
   (fn [obj scene] (:type obj)))
 (defmethod expand-object :sphere [sphere scene]
-  (let [vert (get-vertex scene (:i sphere))
-        radius (v/mag (:dir vert))]
-    (assoc sphere :center (:start vert) :radius radius)))
+  (if (and (:center sphere) (:radius sphere))
+    sphere
+    (let [vert (get-vertex scene (:i sphere))
+          radius (v/mag (:dir vert))]
+      (assoc sphere :center (:start vert) :radius radius))))
 (defmethod expand-object :plane [plane scene]
-  (let [vert (get-vertex scene (:i plane))]
-    (assoc plane :pt (:start vert) :normal (:dir vert))))
+  (if (and (:pt plane) (:normal plane))
+    plane
+    (let [vert (get-vertex scene (:i plane))]
+      (assoc plane :pt (:start vert) :normal (:dir vert)))))
 (defmethod expand-object :triangle [triangle scene]
-  (assoc triangle
-    :v0 (get-vertex scene (:i triangle))
-    :v1 (get-vertex scene (:j triangle))
-    :v2 (get-vertex scene (:k triangle))))
+  (if (and (:v0 triangle) (:v1 triangle) (:v2 triangle))
+    triangle
+    (assoc triangle
+      :v0 (get-vertex scene (:i triangle))
+      :v1 (get-vertex scene (:j triangle))
+      :v2 (get-vertex scene (:k triangle)))))
 
 (defn expand-light [light scene]
   (let [vertex (get-vertex scene (:i light))]
     (condp = (:type light)
-        :point (assoc light :source (:start vertex))
-        :directional (assoc light :direction (:dir vertex)))))
+        :point (if (:source light)
+                 light
+                 (assoc light :source (:start vertex)))
+        :directional (if (:direction light)
+                       light
+                       (assoc light :direction (:dir vertex))))))
 (defn expand-camera [camera scene]
-  (let [{d :dir :as pose} (get-vertex scene (:i camera))
-        zcu (v/unit (v/scale d -1))
-        xc (v/cross d [0 1 0])
-        xcu (v/unit xc)
-        ycu (v/cross zcu xcu)
-        xfrom (v/xformer xcu ycu zcu)]
-    (when (< (v/mag xc) 0.00001) ; TODO revert to older camera
-      (throw (Exception. "Camera xc too close to zero.")))
-    (assoc camera :pose pose :xfrom xfrom)))
+  (let [camera (if (:pose camera)
+                 camera
+                 (assoc camera :pose (get-vertex scene (:i camera))))]
+    (if (:xfrom camera)
+      camera
+      (let [{d :dir :as pose} (:pose camera)
+            zcu (v/unit (v/scale d -1))
+            xc (v/cross d [0 1 0])
+            xcu (v/unit xc)
+            ycu (v/cross zcu xcu)
+            xfrom (v/xformer xcu ycu zcu)]
+        (when (< (v/mag xc) 0.00001) ; TODO revert to older camera
+          (throw (Exception. "Camera xc too close to zero.")))
+        (assoc camera :xfrom xfrom)))))
 
 (defn expand
   "Fill in vertex values by index, etc."
