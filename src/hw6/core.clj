@@ -54,7 +54,18 @@
         i
         (fail (str "Negative " field " not allowed: " i)))
       (fail (str "Could not parse " field " as integer: " val)))
-    (fail (str "Expected width after " flag))))
+    (fail (str "Expected " field " after " flag))))
+
+(defn read-boolean
+  "Read a boolean (true yes on 1, false no off 0) value from the command line."
+  [remain flag field]
+  (if-let [val (first remain)]
+    (if (#{"true" "yes" "on" "1"} val)
+      true
+      (if (#{"false" "no" "off" "0"} val)
+        false
+        (fail (str "Could not parse " field " as a boolean: " val))))
+    (fail (str "Expected " field " after " flag))))
 
 (defn read-arguments
   "Read command-line arguments into a settings map:
@@ -62,7 +73,11 @@
   [args]
   (loop [settings {:in []
                    :w 512
-                   :h 512}
+                   :h 512
+                   ;; :diffuse?
+                   ;; :specular?
+                   ;; :shadows?
+                   }
          args args]
     (if (empty? args)
       settings
@@ -79,6 +94,18 @@
             "-h" (recur (assoc-in settings [:h]
                                   (read-posint remain "height" flag))
                         (rest remain))
+            "-ld" (recur (assoc-in settings [:diffuse?]
+                                   (read-boolean
+                                    remain "diffuse light" "-ld"))
+                         (rest remain))
+            "-ls" (recur (assoc-in settings [:specular?]
+                                   (read-boolean
+                                    remain "specular light" "-ls"))
+                         (rest remain))
+            "-sh" (recur (assoc-in settings [:shadows?]
+                                   (read-boolean
+                                    remain "shadows" "-sh"))
+                         (rest remain))
             (fail (str "Unknown argument: " flag)))))))
 
 (defn -main
@@ -89,10 +116,11 @@
                  (StringReader. (str/join \newline (map slurp (:in settings))))
                  (InputStreamReader. System/in))]
     (let [lines (line-seq (BufferedReader. reader))
-          scene (p/parse lines)]
+          scene (p/parse lines)
+          overrides (select-keys settings [:diffuse? :specular? :shadows?])
+          scene (update-in scene [:settings] merge overrides)]
       (println (format "Loaded %d objects and %d light sources."
                        (count (:objects scene))
                        (count (:lights scene))))
-      (println "Scene parsed as:" scene) ;XXX
       (SwingUtilities/invokeLater (partial launch scene settings)))))
 
