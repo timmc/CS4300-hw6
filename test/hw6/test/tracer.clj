@@ -237,6 +237,12 @@
     (is (= (map cut (specular [planez0] (assoc centerx :ray ray45) dir45xz))
            (map cut [(* 0.3 3 (Math/pow cos225 5)) 0 0])))))
 
+(deftest reflection
+  (is (= (reflect [0 1 0] [3 -4 0])
+         [3 4 0]))
+  (is (= (map cut (reflect (v/unit [0 -1 1]) [-1 1 0]))
+         (map cut [-1 0 1]))))
+
 (deftest colors
   (is (= (rgb->int [1 0 0.2]) 0xFF0033))
   (is (= (rgb->int [1.1 0.2 -5]) 0xFF3300)))

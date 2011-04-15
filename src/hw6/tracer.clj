@@ -177,6 +177,14 @@ contribution."
                 sc (:color mat)]
             (v/scale sc (* I cosp))))))))
 
+(defn reflect
+  "Reflect an incident ray given a unit normal vector."
+  [unormal incident]
+  (let [outcident (v/neg incident)
+        para (v/scale unormal (v/dot outcident unormal))
+        perp (v/diff outcident para)]
+    (v/sum (v/neg perp) para)))
+
 (defn ray->rgb
   "Given a scene and a ray, produce an [r g b] intensity value, or nil."
   [scene ray]
