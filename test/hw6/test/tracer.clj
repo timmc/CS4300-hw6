@@ -203,14 +203,19 @@
     (is (not (light-visible? {:pt [0 0 -1], :obj s0} overhead y-beads)))))
 
 (deftest diffuse-lighting
-  (let [plane {:type :plane
-               :normal [0 0 1]
-               :pt [0 0 0]
-               :material {:diffuse {:color [1 0 0]}}}
-        interx {:obj plane, :pt [0 0 0], :normal [0 0 1], :dist 10, :ray nil}
-        dirlight {:type :directional :direction [0 0 -1] :I 0.2}]
-    (is (= (diffuse [plane] interx dirlight)
-           [0.2 0 0]))))
+  (let [overhead2 {:type :directional, :direction [0 0 -1], :I 2}
+        dir45xz {:type :directional, :direction [-1 0 -1], :I 3}
+        redmat {:diffuse {:color [0.3 0 0]}}
+        planez0 {:type :plane, :normal [0 0 1], :pt [0 0 0], :material redmat}
+        centerx {:obj planez0
+                 :pt (:pt planez0)
+                 :normal (:normal planez0)
+                 :dist 10
+                 :ray nil}]
+    (is (= (diffuse [planez0] centerx overhead2)
+           [(* 0.3 2) 0 0]))
+    (is (= (map cut (diffuse [planez0] centerx dir45xz))
+           (map cut [(* 0.3 3 (/ (Math/sqrt 2) 2)) 0 0])))))
 
 (deftest coloring
   (let [full {:settings {:diffuse? true :specular? true :ambient 2}
