@@ -198,7 +198,14 @@ contribution."
                     (map (partial diffuse objects interx) lights))
             specs (when (-> scene :settings :specular?)
                     (map (partial specular objects interx) lights))
-            rgbs (filter (complement nil?) (concat [amb] diffs specs))]
+            mirror (when (<= (:bounces ray)
+                             (:mirror-limit (:settings scene)))
+                     (let [refl {:start (:pt interx)
+                                 :dir (reflect (v/unit (:normal interx))
+                                               (:dir ray))
+                                 :bounces (inc (:bounces ray))}]
+                       (ray->rgb scene refl)))
+            rgbs (filter (complement nil?) (concat [amb mirror] diffs specs))]
         (when (seq rgbs)
           (apply v/sum rgbs))))))
 
