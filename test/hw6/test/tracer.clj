@@ -212,10 +212,30 @@
                  :normal (:normal planez0)
                  :dist 10
                  :ray nil}]
+    ;; full reflection
     (is (= (diffuse [planez0] centerx overhead2)
-           [(* 0.3 2) 0 0]))
+           [(* 0.3 2 1) 0 0]))
+    ;; 45 degree incidence
     (is (= (map cut (diffuse [planez0] centerx dir45xz))
            (map cut [(* 0.3 3 (/ (Math/sqrt 2) 2)) 0 0])))))
+
+(deftest specular-lighting
+  (let [dir45xz {:type :directional, :direction [-1 0 -1], :I 3}
+        redmat {:specular {:color [0.3 0 0], :exp 5}}
+        planez0 {:type :plane, :normal [0 0 1], :pt [0 0 0], :material redmat}
+        centerx {:obj planez0
+                 :pt (:pt planez0)
+                 :normal (:normal planez0)
+                 :dist 10
+                 :ray "?"}
+        ray90 {:start [-1 0 1] :dir [1 0 -1]}
+        ray45 {:start [0 0 1] :dir [0 0 -1]}
+        cos225 (Math/cos (/ Math/PI 8))]
+    ;; full reflection
+    (is (= (map cut (specular [planez0] (assoc centerx :ray ray90) dir45xz))
+           (map cut [(* 0.3 3 1) 0 0])))
+    (is (= (map cut (specular [planez0] (assoc centerx :ray ray45) dir45xz))
+           (map cut [(* 0.3 3 (Math/pow cos225 5)) 0 0])))))
 
 (deftest coloring
   (let [full {:settings {:diffuse? true :specular? true :ambient 2}

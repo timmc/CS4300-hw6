@@ -162,14 +162,14 @@ intersection (or nil.) This implements Lambertian shading."
                 dc (-> interx :obj :material :diffuse :color)]
             (v/scale dc (* I cos))))))))
 
-(defn specular ;; FIXME way too dim for point source
+(defn specular
   "Given a single light and an intersection, produce the specular color
 contribution."
   [objects interx light]
   (let [to-light (to-light light (:pt interx))]
     (when (light-visible? interx light objects)
       (let [to-viewer (v/unit (v/neg (:dir (:ray interx))))
-            halfway (v/avg to-light to-viewer)
+            halfway (v/unit (v/avg to-light to-viewer))
             cos (v/dot (:normal interx) halfway)]
         (when-not (neg? cos)
           (let [mat (-> interx :obj :material :specular)
