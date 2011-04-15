@@ -146,7 +146,7 @@
 (deftest diffuse-lighting
   (let [plane {:type :plane, :material {:diffuse {:color [1 0 0]}}}
         interx {:obj plane, :pt [0 0 0], :normal [0 0 1], :dist 10, :ray nil}]
-    (is (= (diffuse-1 {} interx {:type :directional :direction [0 0 -1] :I 0.2})
+    (is (= (diffuse interx {:type :directional :direction [0 0 -1] :I 0.2})
            [0.2 0 0]))))
 
 (deftest colors

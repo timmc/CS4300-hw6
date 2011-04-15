@@ -115,40 +115,30 @@ an [x y z] pt and a unit normal vector."
   [light pt]
   (v/unit (v/<-pts (:source light) pt)))
 
-(defn diffuse-1
-  "Given a single light and an intersection, produce the diffuse color
-contribution."
-  [scene interx light]
+(defn diffuse
+  "Calculate the [r g b] diffuse lighting component for one light and one ray
+intersection (or nil.) This implements Lambertian shading."
+  [interx light]
   (let [to-light (v/neg (light-to light (:pt interx)))
         cos (v/dot (:normal interx) to-light)]
     ;; TODO shadows
-    (if (neg? cos)
-      [0 0 0]
+    (when-not (neg? cos)
       (let [I (:I light)
             dc (-> interx :obj :material :diffuse :color)]
         ;; Using a white light source, a.k.a. [I I I]
         ;; Otherwise we would do (v/scale (v/elop * light-color mat-color) cos)
         (v/scale dc (* I cos))))))
 
-(defn diffuse
-  "Calculate the [r g b] diffuse lighting component of a ray intersection. This
-implements Lambertian shading."
-  [scene interx]
-  (if (-> scene :settings :diffuse?)
-    (apply v/sum (map (partial diffuse-1 scene interx) (:lights scene)))
-    [0 0 0]))
-
-(defn specular-1 ;; FIXME way too dim for point source
+(defn specular ;; FIXME way too dim for point source
   "Given a single light and an intersection, produce the specular color
 contribution."
-  [scene interx light]
+  [interx light]
   (let [to-light (v/neg (light-to light (:pt interx)))
         to-viewer (v/unit (v/neg (:dir (:ray interx))))
         halfway (v/avg to-light to-viewer)
         cos (v/dot (:normal interx) halfway)]
     ;; TODO shadows
-    (if (neg? cos)
-      [0 0 0]
+    (when-not (neg? cos)
       (let [mat (-> interx :obj :material :specular)
             cosp (Math/pow cos (:exp mat))
             I (:I light)
@@ -157,25 +147,21 @@ contribution."
         ;; Otherwise we would do (v/scale (v/elop * light-color mat-color) cosp)
         (v/scale sc (* I cosp))))))
 
-(defn specular
-  "Calulate the [r g b] specular lighting component of a ray intersection. This
-implements Blinn-Phong shading."
-  [scene interx]
-  (if (-> scene :settings :specular?)
-    (apply v/sum (map (partial specular-1 scene interx)
-                      (:lights scene)))
-    [0 0 0]))
-
 (defn ray->rgb
-  "Given a scene and a ray, produce an [r g b] intensity value."
+  "Given a scene and a ray, produce an [r g b] intensity value, or nil."
   [scene ray]
   (let [hits (ray-hits scene ray)
         interx (closest-hit hits)]
-    (if interx
-      (v/sum (ambient scene interx)
-             (diffuse scene interx)
-             (specular scene interx))
-      [0 0 0])))
+    (when interx
+      (let [lights (:lights scene)
+            amb (ambient scene interx)
+            diffs (when (-> scene :settings :diffuse?)
+                    (map (partial diffuse interx) lights))
+            specs (when (-> scene :settings :specular?)
+                    (map (partial specular interx) lights))
+            rgbs (filter (complement nil?) (concat [amb] diffs specs))]
+        (when (seq rgbs)
+          (apply v/sum rgbs))))))
 
 (defn rgb->int
   "Given an [r g b] intensity, clamp components to unit range and produce an
@@ -197,7 +183,8 @@ RGB int."
     (doseq [{[vx vy] :pixel
              pixel-ray :ray} (image-rays (:camera scene) w h)]
       (let [rgb (ray->rgb scene pixel-ray)]
-        (.setRGB bi vx vy (rgb->int rgb))))
+        (when rgb
+          (.setRGB bi vx vy (rgb->int rgb)))))
     (dosync (ref-set render-status
                      (assoc @render-status :status :done)))))
 
