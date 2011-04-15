@@ -165,20 +165,18 @@ intersection (or nil.) This implements Lambertian shading."
 (defn specular ;; FIXME way too dim for point source
   "Given a single light and an intersection, produce the specular color
 contribution."
-  [interx light]
-  (let [to-light (to-light light (:pt interx))
-        to-viewer (v/unit (v/neg (:dir (:ray interx))))
-        halfway (v/avg to-light to-viewer)
-        cos (v/dot (:normal interx) halfway)]
-    ;; TODO shadows
-    (when-not (neg? cos)
-      (let [mat (-> interx :obj :material :specular)
-            cosp (Math/pow cos (:exp mat))
-            I (:I light)
-            sc (:color mat)]
-        ;; Using a white light source, a.k.a. [I I I]
-        ;; Otherwise we would do (v/scale (v/elop * light-color mat-color) cosp)
-        (v/scale sc (* I cosp))))))
+  [objects interx light]
+  (let [to-light (to-light light (:pt interx))]
+    (when (light-visible? interx light objects)
+      (let [to-viewer (v/unit (v/neg (:dir (:ray interx))))
+            halfway (v/avg to-light to-viewer)
+            cos (v/dot (:normal interx) halfway)]
+        (when-not (neg? cos)
+          (let [mat (-> interx :obj :material :specular)
+                cosp (Math/pow cos (:exp mat))
+                I (:I light)
+                sc (:color mat)]
+            (v/scale sc (* I cosp))))))))
 
 (defn ray->rgb
   "Given a scene and a ray, produce an [r g b] intensity value, or nil."
@@ -192,7 +190,7 @@ contribution."
             diffs (when (-> scene :settings :diffuse?)
                     (map (partial diffuse objects interx) lights))
             specs (when (-> scene :settings :specular?)
-                    (map (partial specular interx) lights))
+                    (map (partial specular objects interx) lights))
             rgbs (filter (complement nil?) (concat [amb] diffs specs))]
         (when (seq rgbs)
           (apply v/sum rgbs))))))
