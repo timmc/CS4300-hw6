@@ -145,26 +145,83 @@
                    [100 200 300])
          [(- 3/5) 0 (- 4/5)])))
 
-(deftest blocking
-  (is (segment-clear? [0 0 0] [0 2.5 0] nil [])) ; empty
+(deftest light-distance-away
+  (is (= (light-distance {:type :point, :source [100 204 303]} [100 200 300])
+         5))
+  (is (= (light-distance {:type :directional, :direction [1 2 3]} [4 5 6])
+         Double/POSITIVE_INFINITY)))
+
+(deftest conditional-dropper
+  (is (= (drop-first-if even? [1 2 3]) [1 2 3]))
+  (is (= (drop-first-if even? [2 3 4]) [3 4]))
+  (is (= (drop-first-if even? nil) nil)))
+
+(deftest approx-intersection-equiv
+  (binding [*intersection-equiv-dist* 1]
+    (let [basic {:obj "foo", :pt [0 1 2], :ray nil, :dist nil}]
+      (is (interx= basic basic))
+      (is (interx= basic (assoc basic :pt [0.1 1.1 1.9])))
+      (is (not (interx= basic (assoc basic :pt [0 1 3.1]))))
+      (is (not (interx= basic (assoc basic :obj "bar")))))))
+
+(deftest shadows
+  ;; empty scene
+  (is (light-visible? {:pt [0 2 0], :obj s3}
+                      {:type :point, :source [0 0 0]}
+                      []))
   ;; nothing involved
-  (is (segment-clear? [20 -100 0] [20 100 0] nil y-beads)) ; parallel
-  (is (segment-clear? [0 1.2 0] [0 1.8 0] nil y-beads))   ; short
-   ;; just s0 involved
-  (is (not (segment-clear? [0 0 0] [0 1.5 0] nil y-beads))) ; without exclude
-  (is (segment-clear? [0 0 0] [0 1.5 0] s0 y-beads)) ; with exclude
-  (is (not (segment-clear? [0 0 0] [0 1.5 0] s3 y-beads))) ; wrong exclude
-   ;; multiple involved
-  (is (not (segment-clear? [0 0 0] [0 2.5 0] nil y-beads))) ; without exclude
-  (is (not (segment-clear? [0 0 0] [0 2.5 0] s0 y-beads))) ; with exclude
-  (is (not (segment-clear? [0 0 0] [0 2.5 0] s3 y-beads))) ; wrong exclude
-  )
+  (is (light-visible? {:pt [20 -100 0], :obj {}}
+                      {:type :point, :source [20 100 0]}
+                      y-beads)) ; parallel
+  (is (light-visible? {:pt [0 1.2 0], :obj {}}
+                      {:type :point, :source [0 1.8 0]}
+                      y-beads))   ; short
+  ;; point light is in open space
+  (let [light15 {:type :point, :source [0 1.5 0]}]
+    ;; from center of s0 (surface interference)
+    (is (not (light-visible? {:pt [0 0 0], :obj s0}
+                             light15
+                             y-beads)))
+    ;; just off the surface
+    (is (light-visible? {:pt [0 0.999999999 0], :obj s0}
+                        light15
+                        y-beads))
+    ;; wrong exclude
+    (is (not (light-visible? {:pt [0 0.999999999 0], :obj s3}
+                             light15
+                             y-beads))))
+  ;; point light hidden in sphere
+  (let [light3 {:type :point, :source [0 3 0]}]
+    (is (not (light-visible? {:pt [0 1.5 0], :obj s0} light3 y-beads)))
+    (is (not (light-visible? {:pt [0 1.5 0], :obj s3} light3 y-beads)))
+    (is (light-visible? {:pt [0 2.5 0], :obj s3} light3 y-beads)))
+  ;; directional
+  (let [overhead {:type :directional, :direction [0 0 -1]}]
+    (is (light-visible? {:pt [0 1.5 0], :obj s0} overhead y-beads))
+    (is (not (light-visible? {:pt [0 0 0], :obj s0} overhead y-beads)))
+    (is (light-visible? {:pt [0 0 1], :obj s0} overhead y-beads))
+    (is (not (light-visible? {:pt [0 0 -1], :obj s0} overhead y-beads)))))
 
 (deftest diffuse-lighting
-  (let [plane {:type :plane, :material {:diffuse {:color [1 0 0]}}}
-        interx {:obj plane, :pt [0 0 0], :normal [0 0 1], :dist 10, :ray nil}]
-    (is (= (diffuse interx {:type :directional :direction [0 0 -1] :I 0.2})
+  (let [plane {:type :plane
+               :normal [0 0 1]
+               :pt [0 0 0]
+               :material {:diffuse {:color [1 0 0]}}}
+        interx {:obj plane, :pt [0 0 0], :normal [0 0 1], :dist 10, :ray nil}
+        dirlight {:type :directional :direction [0 0 -1] :I 0.2}]
+    (is (= (diffuse [plane] interx dirlight)
            [0.2 0 0]))))
+
+(deftest coloring
+  (let [full {:settings {:diffuse? true :specular? true :ambient 2}
+              :objects {:type :plane
+                        :material {:ambient {:color [10000 20000 30000]}
+                                   :diffuse {:color [100 200 300]}
+                                   :specular {:color [1 2 3] :exp 2}}
+                        :pt [0 0 0]
+                        :normal [0 1 0]}
+              :lights [{:type :point, :I 3, :source [0 1 1]}
+                       {:type :directional, :I 5, :dir [1 1 0]}]}]))
 
 (deftest colors
   (is (= (rgb->int [1 0 0.2]) 0xFF0033))

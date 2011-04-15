@@ -114,36 +114,53 @@ rays from the viewpoint as {:pixel [x y], :ray <ray>}."
   [light pt]
   (v/unit (v/<-pts pt (:source light))))
 
-(defn segment-clear?
-  "Return logical true if the ray from origin towards [x y z] destination
-does not intersect any objects (besides the optionally excluded one) before the
-destination is reached."
-  [origin dest exclude objects]
-  (let [dir (v/<-pts origin dest)
-        len (v/mag dir)
-        ray {:start origin :dir dir}
-        xs (->> objects
-                (map #(intersect % ray) ,,,)
-                (filter (complement nil?) ,,,)
-                (filter #(< (:dist %) len) ,,,)
-                (sort-by :dist ,,,))]
-    (if (= (:obj (first xs)) exclude)
-      (empty? (rest xs))
-      (empty? xs))))
+(defmulti light-distance
+  "Determine the distance to the light source. (May be infinite.)"
+  (fn [light pt] (:type light)))
+(defmethod light-distance :directional
+  [light pt]
+  Double/POSITIVE_INFINITY)
+(defmethod light-distance :point
+  [light pt]
+  (v/mag (v/<-pts (:source light) pt)))
+
+(defn drop-first-if
+  "If the seq is not empty, drop the first element if it matches the predicate."
+  [pred s]
+  (when-let [s (seq s)]
+    (if (pred (first s))
+      (rest s)
+      s)))
+
+(def ^{:doc "Radius of approximate equivalence for intersections" :dynamic true}
+  *intersection-equiv-dist* 0.00001)
+
+(defn interx=
+  "Detect if two intersections are probably the same."
+  [i1 i2]
+  (and (= (:obj i1) (:obj i2))
+       (< (v/mag (v/<-pts (:pt i1) (:pt i2))) *intersection-equiv-dist*)))
+
+(defn light-visible?
+  [interx light objects]
+  (let [origin (:pt interx)
+        ray {:start origin, :dir (to-light light origin), :bounces 0}
+        close-hits (sort-by :dist (ray-hits objects ray))
+        candidates (drop-first-if (partial interx= interx) close-hits)]
+    (or (empty? candidates)
+        (> (:dist (first candidates)) (light-distance light origin)))))
 
 (defn diffuse
   "Calculate the [r g b] diffuse lighting component for one light and one ray
 intersection (or nil.) This implements Lambertian shading."
-  [interx light]
-  (let [to-light (to-light light (:pt interx))
-        cos (v/dot (:normal interx) to-light)]
-    ;; TODO shadows
-    (when-not (neg? cos)
-      (let [I (:I light)
-            dc (-> interx :obj :material :diffuse :color)]
-        ;; Using a white light source, a.k.a. [I I I]
-        ;; Otherwise we would do (v/scale (v/elop * light-color mat-color) cos)
-        (v/scale dc (* I cos))))))
+  [objects interx light]
+  (let [to-light (to-light light (:pt interx))]
+    (when (light-visible? interx light objects)
+      (let [cos (v/dot (:normal interx) to-light)]
+        (when-not (neg? cos)
+          (let [I (:I light)
+                dc (-> interx :obj :material :diffuse :color)]
+            (v/scale dc (* I cos))))))))
 
 (defn specular ;; FIXME way too dim for point source
   "Given a single light and an intersection, produce the specular color
@@ -166,13 +183,14 @@ contribution."
 (defn ray->rgb
   "Given a scene and a ray, produce an [r g b] intensity value, or nil."
   [scene ray]
-  (let [hits (ray-hits (:objects scene) ray)
+  (let [objects (:objects scene)
+        hits (ray-hits objects ray)
         interx (closest-hit hits)]
     (when interx
       (let [lights (:lights scene)
             amb (ambient scene interx)
             diffs (when (-> scene :settings :diffuse?)
-                    (map (partial diffuse interx) lights))
+                    (map (partial diffuse objects interx) lights))
             specs (when (-> scene :settings :specular?)
                     (map (partial specular interx) lights))
             rgbs (filter (complement nil?) (concat [amb] diffs specs))]
