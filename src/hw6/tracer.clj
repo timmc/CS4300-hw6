@@ -4,7 +4,8 @@
            (java.awt.image BufferedImage)))
 
 ;;; A ray is a {:start [x y z] :dir [x y z] :bounces 0}
-;;; An intersection is a {:obj <obj>, :pt [x y z], :dist f, :normal <unitvec>}
+;;; An intersection is a {:obj <obj>, :pt [x y z], :dist f, :normal <unitvec>,
+;;;    :ray <ray>}
 
 (defn along-ray
   "Compute {:pt, :dist} on a ray based on the number of multiples of :dir that
@@ -34,7 +35,7 @@ are required to reach it."
         (when t
           (let [{pt :pt, dist :dist} (along-ray ray t)
                 normal (v/unit (v/<-pts c pt))]
-            {:obj obj, :pt pt, :dist dist, :normal normal}))))))
+            {:obj obj, :pt pt, :dist dist, :normal normal, :ray ray}))))))
 (defmethod intersect :plane [{pt :pt normal :normal :as obj}
                              {q :start d :dir :as ray}]
   (let [unormal (v/unit normal)
@@ -48,7 +49,7 @@ are required to reach it."
                 ;; Pick the normal that bounces back against the ray
                 norm-sigmult (- (Math/signum (double angle-from-perp)))
                 unormal (v/scale unormal norm-sigmult)]
-            {:obj obj, :pt pt, :dist dist, :normal unormal}))))))
+            {:obj obj, :pt pt, :dist dist, :normal unormal, :ray ray}))))))
 
 (defn ray-hits
   "Compute a seq of all object intersections in the scene with the given ray."
@@ -98,7 +99,7 @@ rays from the viewpoint as {:pixel [x y], :ray <ray>}."
 
 (defn ambient
   "Calculate the [r g b] ambient lighting component of a ray intersection."
-  [scene ray interx]
+  [scene interx]
   (let [amb-color (-> interx :obj :material :ambient :color)
         amb-comp (v/scale amb-color (-> scene :settings :ambient))]
     amb-comp))
@@ -117,14 +118,14 @@ an [x y z] pt and a unit normal vector."
 (defn diffuse-1
   "Given a single light and an intersection, produce the diffuse color
 contribution."
-  [scene ray interx diffuse-mat light]
+  [scene interx light]
   (let [to-light (v/neg (light-to light (:pt interx)))
         cos (v/dot (:normal interx) to-light)]
     ;; TODO shadows
     (if (neg? cos)
       [0 0 0]
       (let [I (:I light)
-            dc (:color diffuse-mat)]
+            dc (-> interx :obj :material :diffuse :color)]
         ;; Using a white light source, a.k.a. [I I I]
         ;; Otherwise we would do (v/scale (v/elop * light-color mat-color) cos)
         (v/scale dc (* I cos))))))
@@ -132,27 +133,26 @@ contribution."
 (defn diffuse
   "Calculate the [r g b] diffuse lighting component of a ray intersection. This
 implements Lambertian shading."
-  [scene ray interx]
+  [scene interx]
   (if (-> scene :settings :diffuse?)
-    (let [diff-mat (-> interx :obj :material :diffuse)]
-      (apply v/sum (map (partial diffuse-1 scene ray interx diff-mat)
-                        (:lights scene))))
+    (apply v/sum (map (partial diffuse-1 scene interx) (:lights scene)))
     [0 0 0]))
 
 (defn specular-1 ;; FIXME way too dim for point source
   "Given a single light and an intersection, produce the specular color
 contribution."
-  [scene ray interx specular-mat light]
+  [scene interx light]
   (let [to-light (v/neg (light-to light (:pt interx)))
-        to-viewer (v/unit (v/neg (:dir ray)))
+        to-viewer (v/unit (v/neg (:dir (:ray interx))))
         halfway (v/avg to-light to-viewer)
         cos (v/dot (:normal interx) halfway)]
     ;; TODO shadows
     (if (neg? cos)
       [0 0 0]
-      (let [cosp (Math/pow cos (:exp specular-mat))
+      (let [mat (-> interx :obj :material :specular)
+            cosp (Math/pow cos (:exp mat))
             I (:I light)
-            sc (:color specular-mat)]
+            sc (:color mat)]
         ;; Using a white light source, a.k.a. [I I I]
         ;; Otherwise we would do (v/scale (v/elop * light-color mat-color) cosp)
         (v/scale sc (* I cosp))))))
@@ -160,11 +160,10 @@ contribution."
 (defn specular
   "Calulate the [r g b] specular lighting component of a ray intersection. This
 implements Blinn-Phong shading."
-  [scene ray interx]
+  [scene interx]
   (if (-> scene :settings :specular?)
-    (let [spec-mat (-> interx :obj :material :specular)]
-      (apply v/sum (map (partial specular-1 scene ray interx spec-mat)
-                        (:lights scene))))
+    (apply v/sum (map (partial specular-1 scene interx)
+                      (:lights scene)))
     [0 0 0]))
 
 (defn ray->rgb
@@ -173,9 +172,9 @@ implements Blinn-Phong shading."
   (let [hits (ray-hits scene ray)
         interx (closest-hit hits)]
     (if interx
-      (v/sum (ambient scene ray interx)
-             (diffuse scene ray interx)
-             (specular scene ray interx))
+      (v/sum (ambient scene interx)
+             (diffuse scene interx)
+             (specular scene interx))
       [0 0 0])))
 
 (defn rgb->int
