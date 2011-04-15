@@ -53,8 +53,8 @@ are required to reach it."
 
 (defn ray-hits
   "Compute a seq of all object intersections in the scene with the given ray."
-  [scene ray]
-  (filter (complement nil?) (map #(intersect % ray) (:objects scene))))
+  [objects ray]
+  (filter (complement nil?) (map #(intersect % ray) objects)))
 
 (defn closest-hit
   "Find the closest ray hit in the scene, or nil."
@@ -166,7 +166,7 @@ contribution."
 (defn ray->rgb
   "Given a scene and a ray, produce an [r g b] intensity value, or nil."
   [scene ray]
-  (let [hits (ray-hits scene ray)
+  (let [hits (ray-hits (:objects scene) ray)
         interx (closest-hit hits)]
     (when interx
       (let [lights (:lights scene)
