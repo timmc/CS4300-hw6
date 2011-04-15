@@ -136,12 +136,12 @@
          [2 3 4])))
 
 (deftest light-dir
-  (is (= (light-to {:type :point :source [103 504 0]}
+  (is (= (to-light {:type :point :source [103 504 0]}
                    [100 500 0])
-         [(- 3/5) (- 4/5) 0]))
-  (is (= (light-to {:type :directional :direction [3 0 4]}
+         [3/5 4/5 0]))
+  (is (= (to-light {:type :directional :direction [3 0 4]}
                    [100 200 300])
-         [3/5 0 4/5])))
+         [(- 3/5) 0 (- 4/5)])))
 
 (deftest diffuse-lighting
   (let [plane {:type :plane, :material {:diffuse {:color [1 0 0]}}}

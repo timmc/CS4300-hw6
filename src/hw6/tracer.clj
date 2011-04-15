@@ -104,22 +104,21 @@ rays from the viewpoint as {:pixel [x y], :ray <ray>}."
         amb-comp (v/scale amb-color (-> scene :settings :ambient))]
     amb-comp))
 
-(defmulti light-to
-  "Determine the unit direction vector of an inbound light source given
-an [x y z] pt and a unit normal vector."
+(defmulti to-light
+  "Determine the unit direction vector from an [x y z] point towards a light."
   (fn [light pt] (:type light)))
-(defmethod light-to :directional
+(defmethod to-light :directional
   [light pt]
-  (v/unit (:direction light)))
-(defmethod light-to :point
+  (v/unit (v/neg (:direction light))))
+(defmethod to-light :point
   [light pt]
-  (v/unit (v/<-pts (:source light) pt)))
+  (v/unit (v/<-pts pt (:source light))))
 
 (defn diffuse
   "Calculate the [r g b] diffuse lighting component for one light and one ray
 intersection (or nil.) This implements Lambertian shading."
   [interx light]
-  (let [to-light (v/neg (light-to light (:pt interx)))
+  (let [to-light (to-light light (:pt interx))
         cos (v/dot (:normal interx) to-light)]
     ;; TODO shadows
     (when-not (neg? cos)
@@ -133,7 +132,7 @@ intersection (or nil.) This implements Lambertian shading."
   "Given a single light and an intersection, produce the specular color
 contribution."
   [interx light]
-  (let [to-light (v/neg (light-to light (:pt interx)))
+  (let [to-light (to-light light (:pt interx))
         to-viewer (v/unit (v/neg (:dir (:ray interx))))
         halfway (v/avg to-light to-viewer)
         cos (v/dot (:normal interx) halfway)]
