@@ -70,30 +70,32 @@
     (is (= (map cut (:normal inter-x))
            (map cut (v/unit [-2 -1 0]))))))
 
+;; Unit spheres laid out on the Y axis.
+(def s0 {:type :sphere, :center [0 0 0], :radius 1}) ; [-1 1]
+(def s3 {:type :sphere, :center [0 3 0], :radius 1}) ; [2 4]
+(def s6 {:type :sphere, :center [0 6 0], :radius 1}) ; [5 7]
+(def y-beads {:objects [s0 s3 s6]})
+
 (deftest ray-vs-scene
-  (let [s0 {:type :sphere, :center [0 0 0], :radius 1} ; [-1 1]
-        s3 {:type :sphere, :center [0 3 0], :radius 1} ; [2 4]
-        s6 {:type :sphere, :center [0 6 0], :radius 1} ; [5 7]
-        beads {:objects [s0 s3 s6]}]
-    ;; TODO order doesn't matter
-    (let [ray {:start [0 -10 0] :dir [0 1 0] :bounces 0}]
-      (is (= (ray-hits beads ray)
-             [{:obj s0 :pt [0 -1 0] :dist 9 :normal [0 -1 0] :ray ray}
-              {:obj s3 :pt [0 2 0] :dist 12 :normal [0 -1 0] :ray ray}
-              {:obj s6 :pt [0 5 0] :dist 15 :normal [0 -1 0] :ray ray}])))
+  ;; TODO order doesn't matter
+  (let [ray {:start [0 -10 0] :dir [0 1 0] :bounces 0}]
+    (is (= (ray-hits y-beads ray)
+           [{:obj s0 :pt [0 -1 0] :dist 9 :normal [0 -1 0] :ray ray}
+            {:obj s3 :pt [0 2 0] :dist 12 :normal [0 -1 0] :ray ray}
+            {:obj s6 :pt [0 5 0] :dist 15 :normal [0 -1 0] :ray ray}])))
     ;; filter nils
-    (let [ray {:start [0 1.5 0] :dir [0 1 0] :bounces 0}]
-      (is (= (ray-hits beads ray)
-             [{:obj s3 :pt [0 2 0] :dist 0.5 :normal [0 -1 0] :ray ray}
-              {:obj s6 :pt [0 5 0] :dist 3.5 :normal [0 -1 0] :ray ray}])))
-    ;; from one direction...
-    (let [ray {:start [0 -10 0] :dir [0 1 0] :bounces 0}]
-      (is (= (closest-hit (ray-hits beads ray))
-             {:obj s0 :pt [0 -1 0] :dist 9 :normal [0 -1 0] :ray ray})))
-    ;; ...and the other.
-    (let [ray {:start [0 10 0] :dir [0 -20 0] :bounces 0}]
-      (is (= (closest-hit (ray-hits beads ray))
-             {:obj s6 :pt [0 7 0] :dist 3 :normal [0 1 0] :ray ray})))))
+  (let [ray {:start [0 1.5 0] :dir [0 1 0] :bounces 0}]
+    (is (= (ray-hits y-beads ray)
+           [{:obj s3 :pt [0 2 0] :dist 0.5 :normal [0 -1 0] :ray ray}
+            {:obj s6 :pt [0 5 0] :dist 3.5 :normal [0 -1 0] :ray ray}])))
+   ;; from one direction...
+  (let [ray {:start [0 -10 0] :dir [0 1 0] :bounces 0}]
+    (is (= (closest-hit (ray-hits y-beads ray))
+           {:obj s0 :pt [0 -1 0] :dist 9 :normal [0 -1 0] :ray ray})))
+   ;; ...and the other.
+  (let [ray {:start [0 10 0] :dir [0 -20 0] :bounces 0}]
+    (is (= (closest-hit (ray-hits y-beads ray))
+           {:obj s6 :pt [0 7 0] :dist 3 :normal [0 1 0] :ray ray}))))
 
 (deftest cam-coords
   (binding [*camera-fov* 90]
