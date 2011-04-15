@@ -145,6 +145,22 @@
                    [100 200 300])
          [(- 3/5) 0 (- 4/5)])))
 
+(deftest blocking
+  (is (segment-clear? [0 0 0] [0 2.5 0] nil [])) ; empty
+  (let [y-beads [s0 s3 s6]]
+    ;; nothing involved
+    (is (segment-clear? [20 -100 0] [20 100 0] nil y-beads)) ; parallel
+    (is (segment-clear? [0 1.2 0] [0 1.8 0] nil y-beads)) ; short
+    ;; just s0 involved
+    (is (not (segment-clear? [0 0 0] [0 1.5 0] nil y-beads))) ; without exclude
+    (is (segment-clear? [0 0 0] [0 1.5 0] s0 y-beads)) ; with exclude
+    (is (not (segment-clear? [0 0 0] [0 1.5 0] s3 y-beads))) ; wrong exclude
+    ;; multiple involved
+    (is (not (segment-clear? [0 0 0] [0 2.5 0] nil y-beads))) ; without exclude
+    (is (not (segment-clear? [0 0 0] [0 2.5 0] s0 y-beads))) ; with exclude
+    (is (not (segment-clear? [0 0 0] [0 2.5 0] s3 y-beads))) ; wrong exclude
+    ))
+
 (deftest diffuse-lighting
   (let [plane {:type :plane, :material {:diffuse {:color [1 0 0]}}}
         interx {:obj plane, :pt [0 0 0], :normal [0 0 1], :dist 10, :ray nil}]

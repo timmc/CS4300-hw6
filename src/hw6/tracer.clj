@@ -114,6 +114,23 @@ rays from the viewpoint as {:pixel [x y], :ray <ray>}."
   [light pt]
   (v/unit (v/<-pts pt (:source light))))
 
+(defn segment-clear?
+  "Return logical true if the ray from origin towards [x y z] destination
+does not intersect any objects (besides the optionally excluded one) before the
+destination is reached."
+  [origin dest exclude objects]
+  (let [dir (v/<-pts origin dest)
+        len (v/mag dir)
+        ray {:start origin :dir dir}
+        xs (->> objects
+                (map #(intersect % ray) ,,,)
+                (filter (complement nil?) ,,,)
+                (filter #(< (:dist %) len) ,,,)
+                (sort-by :dist ,,,))]
+    (if (= (:obj (first xs)) exclude)
+      (empty? (rest xs))
+      (empty? xs))))
+
 (defn diffuse
   "Calculate the [r g b] diffuse lighting component for one light and one ray
 intersection (or nil.) This implements Lambertian shading."
