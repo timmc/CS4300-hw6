@@ -27,7 +27,7 @@
 	     (paint [^Graphics2D g]
                (.drawImage g bi nil 0 0)
                (when-not (= (:status @*render-status*) :done)
-                 (future (Thread/sleep 300)
+                 (future (Thread/sleep 1000)
                          (.repaint this))))
              (update [_]))]
     (doto jc

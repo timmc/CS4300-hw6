@@ -237,17 +237,6 @@
     (is (= (map cut (specular [planez0] (assoc centerx :ray ray45) dir45xz))
            (map cut [(* 0.3 3 (Math/pow cos225 5)) 0 0])))))
 
-(deftest coloring
-  (let [full {:settings {:diffuse? true :specular? true :ambient 2}
-              :objects {:type :plane
-                        :material {:ambient {:color [10000 20000 30000]}
-                                   :diffuse {:color [100 200 300]}
-                                   :specular {:color [1 2 3] :exp 2}}
-                        :pt [0 0 0]
-                        :normal [0 1 0]}
-              :lights [{:type :point, :I 3, :source [0 1 1]}
-                       {:type :directional, :I 5, :dir [1 1 0]}]}]))
-
 (deftest colors
   (is (= (rgb->int [1 0 0.2]) 0xFF0033))
   (is (= (rgb->int [1.1 0.2 -5]) 0xFF3300)))

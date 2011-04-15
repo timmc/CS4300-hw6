@@ -41,8 +41,7 @@ are required to reach it."
   (let [unormal (v/unit normal)
         dist-origin (v/dot unormal pt)
         angle-from-perp (v/dot d unormal)]
-    (if (zero? angle-from-perp)
-      nil
+    (when-not (zero? angle-from-perp)
       (let [t (/ (- dist-origin (v/dot q unormal)) angle-from-perp)]
         (when (pos? t)
           (let [{pt :pt, dist :dist} (along-ray ray t)
