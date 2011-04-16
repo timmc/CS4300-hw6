@@ -35,7 +35,7 @@
    :settings {:diffuse? true
               :specular? true
               :shadows? true
-              :mirror-max 1
+              :mirror-limit 1
               :ambient-intensity 1.0
               :reflectivity 0.25}
    :lights []

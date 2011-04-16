@@ -67,16 +67,18 @@
        (catch NumberFormatException nfe
          nil)))
 
-(defn read-posint
-  "Read a positive integer value from the command line."
-  [remain flag field]
-  (if-let [val (first remain)]
-    (if-let [i (maybe-parse-int val)]
-      (if (< 0 i)
-        i
-        (fail (str "Negative " field " not allowed: " i)))
-      (fail (str "Could not parse " field " as integer: " val)))
-    (fail (str "Expected " field " after " flag))))
+(defn read-int
+  "Read an integer value from the command line, with optional validator."
+  ([remain flag field]
+     (read-int remain flag field nil))
+  ([remain flag field validator]
+     (if-let [val (first remain)]
+       (if-let [i (maybe-parse-int val)]
+         (if (or (nil? validator) (validator i))
+           i
+           (fail (str "Bad value for " field ": " i)))
+         (fail (str "Could not parse " field " as integer: " val)))
+       (fail (str "Expected " field " after " flag)))))
 
 (defn read-boolean
   "Read a boolean (true yes on 1, false no off 0) value from the command line."
@@ -88,8 +90,6 @@
         false
         (fail (str "Could not parse " field " as a boolean: " val))))
     (fail (str "Expected " field " after " flag))))
-
-(def scene-settings-keys [:diffuse? :specular? :shadows? :reflectivity])
 
 (defn read-arguments
   "Read command-line arguments into a settings map:
@@ -111,10 +111,10 @@
                           (rest remain))
                    (fail "Expected filename after -f"))
             "-w" (recur (assoc-in settings [:w]
-                                  (read-posint remain "width" flag))
+                                  (read-int remain "width" flag #(> % 0)))
                         (rest remain))
             "-h" (recur (assoc-in settings [:h]
-                                  (read-posint remain "height" flag))
+                                  (read-int remain "height" flag #(> % 0)))
                         (rest remain))
             "-ld" (recur (assoc-in settings [:diffuse?]
                                    (read-boolean
@@ -129,8 +129,12 @@
                                     remain "shadows" "-sh"))
                          (rest remain))
             "-rf" (recur (assoc-in settings [:reflectivity]
-                                   (/ (read-posint remain "reflectivity %" flag)
+                                   (/ (read-int remain "reflectivity %" flag)
                                       100.0))
+                         (rest remain))
+            "-ml" (recur (assoc-in settings [:mirror-limit]
+                                   (read-int remain "mirror limit" flag
+                                             #(>= % 0)))
                          (rest remain))
             (fail (str "Unknown argument: " flag)))))))
 
@@ -145,7 +149,8 @@
           scene (try (p/parse lines)
                      (catch Exception e
                        (fail (.getMessage e))))
-          overrides (select-keys settings scene-settings-keys)
+          overrides (select-keys settings
+                                 (set (keys (:settings p/empty-scene))))
           scene (update-in scene [:settings] merge overrides)]
       (println (format "Loaded %d objects and %d light sources."
                        (count (:objects scene))
