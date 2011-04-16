@@ -52,6 +52,11 @@
   (is (thrown-with-msg? Exception #"parse.*ss 1 2 3"
         (parse ["## foo" "sm 0 0 0 1" "ss 1 2 3" "vv 1 2 3 4 5 6"]))))
 
+(deftest regressions
+  ;; Was overwriting optional/non-standard settings
+  (let [scene (parse ["se d s a 1 0.7"])]
+    (is (number? (:reflectivity (:settings scene))))))
+
 (deftest expansion
   (let [cam-no-i {:pose {:start [0 0 0] :dir [0 0 42]}}
         scene {:vertices [{:start [1 2 3] :dir [4 5 6]}

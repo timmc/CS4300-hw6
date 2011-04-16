@@ -87,12 +87,12 @@
               :material (:last-material scene)}))
 ;; settings
 (defmethod parse-line "se" [scene _ d s a m I]
-  (assoc-in scene [:settings]
-            {:diffuse? (= d "d")
-             :specular? (= s "s")
-             :shadows? (= a "a")
-             :mirror-limit (parse-int m)
-             :ambient (parse-float I)}))
+  (update-in scene [:settings] merge
+             {:diffuse? (= d "d")
+              :specular? (= s "s")
+              :shadows? (= a "a")
+              :mirror-limit (parse-int m)
+              :ambient (parse-float I)}))
 ;; lights
 (defmethod parse-line "pl" [scene _ i I]
   (update-in scene [:lights]

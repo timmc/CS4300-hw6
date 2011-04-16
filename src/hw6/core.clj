@@ -16,7 +16,9 @@
 (defn start-render
   "Start a renderer writing to the given BufferedImage."
   [scene, bi, ^JComponent canvas]
-  (future (rt/render scene bi *render-status*)
+  ;; TODO use a normal Thread, since exceptions only appear on deref
+  (future (try (rt/render scene bi *render-status*)
+               (catch Exception e (.printStackTrace e)))
           ;; one final repaint to catch the last bit of data.
           (.repaint canvas)))
 
@@ -44,6 +46,7 @@
         canvas (make-canvas scene bi settings)]
     (start-render scene bi canvas)
     (doto fr
+      ;; TODO Just dispose, but also kill the render thread.
       (.setDefaultCloseOperation JFrame/EXIT_ON_CLOSE)
       (.add canvas)
       (.pack)
