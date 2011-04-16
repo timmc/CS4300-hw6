@@ -19,9 +19,13 @@
   (scale v -1))
 
 (defn unit
-  "Compute the unit vector in the same direction."
+  "Compute the unit vector in the same direction. Given a zero-length vector,
+returns it unchanged."
   [v]
-  (scale v (/ (mag v))))
+  (let [m (mag v)]
+    (if (zero? m)
+      v
+      (scale v (/ m)))))
 
 (defn sum
   "Compute sum of two vectors."
