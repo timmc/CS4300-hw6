@@ -13,11 +13,10 @@ function first-run {
   echo "Installing Leiningen build tool into ~/.lein"
   curl --silent "$LEIN_STABLE" > "$LEIN_LOCAL"
   chmod +x "$LEIN_LOCAL"
-  "./$LEIN_LOCAL" uberjar
 }
 
 if [ ! -f "$LEIN_LOCAL" ] ; then
   first-run
 fi
 
-lein uberjar
+"./$LEIN_LOCAL" uberjar

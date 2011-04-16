@@ -41,7 +41,8 @@ decimal integers.
 
 # Known bugs
 
-None.
+* File paths specified on command line are relative to script, not to current
+  working directory.
 
 # Extra credit
 
