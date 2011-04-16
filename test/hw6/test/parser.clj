@@ -48,6 +48,10 @@
           cent (v/xform transform [0 0 1])]
       (is (= cent [-1 7.5 6])))))
 
+(deftest failures
+  (is (thrown-with-msg? Exception #"parse.*ss 1 2 3"
+        (parse ["## foo" "sm 0 0 0 1" "ss 1 2 3" "vv 1 2 3 4 5 6"]))))
+
 (deftest expansion
   (let [cam-no-i {:pose {:start [0 0 0] :dir [0 0 42]}}
         scene {:vertices [{:start [1 2 3] :dir [4 5 6]}

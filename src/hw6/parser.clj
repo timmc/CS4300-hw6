@@ -177,12 +177,22 @@ recently defined one."
 
 ;;;; Main loop
 
+(defn try-parse-line
+  "Try to fold each line into the scene. Throws errors with line number."
+  [scene linenum text]
+  (if (str/blank? text)
+    scene
+    (let [pieces (str/split #"\s+" text)]
+      (try (apply parse-line scene pieces)
+           (catch Exception e
+             (throw (Exception.
+                     (format "Could not parse line %d: %s\nCaused by %s"
+                             linenum text e))))))))
+
 (defn parse
   "Parse a sequence of lines into a world"
   [lines]
-  (let [lines (->> lines
-                   (filter (complement str/blank?) ,,,)
-                   (map (partial str/split #"\s+") ,,,)
-                   (filter (complement nil?) ,,,))]
-    (expand (reduce (partial apply parse-line) empty-scene lines))))
+  (expand (reduce (partial apply try-parse-line)
+                  empty-scene
+                  (map vector (range) lines))))
 

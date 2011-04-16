@@ -139,7 +139,9 @@
                  (StringReader. (str/join \newline (map slurp (:in settings))))
                  (InputStreamReader. System/in))]
     (let [lines (line-seq (BufferedReader. reader))
-          scene (p/parse lines)
+          scene (try (p/parse lines)
+                     (catch Exception e
+                       (fail (.getMessage e))))
           overrides (select-keys settings scene-settings-keys)
           scene (update-in scene [:settings] merge overrides)]
       (println (format "Loaded %d objects and %d light sources."
