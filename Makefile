@@ -30,12 +30,14 @@ pkg: pkg-clean
 	cp README-CS4300 "$(PKGDIR)/README.txt"
 	cp -r src/ "$(PKGDIR)/src"
 	cp -r test/ "$(PKGDIR)/test"
-	cp project.clj run.sh Makefile "$(PKGDIR)/"
+	cp -r res/ "$(PKGDIR)/res"
+	cp project.clj build.sh run.sh Makefile "$(PKGDIR)/"
 	find ./pkg -name '*~' -delete
 	tar -czf "$(PACKAGE_FILE)" --directory pkg/ "$(PROJNAME)/"
 
 pkg-clean:
 	rm -f "$(PROJNAME).tar.gz"
+	rm -f *-standalone.jar
 	rm -rf pkg
 	lein clean
 
