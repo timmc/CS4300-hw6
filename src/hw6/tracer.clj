@@ -157,9 +157,10 @@ rays from the viewpoint as {:pixel [x y], :ray <ray>}."
 (defn diffuse
   "Calculate the [r g b] diffuse lighting component for one light and one ray
 intersection (or nil.) This implements Lambertian shading."
-  [objects interx light]
+  [scene interx light]
   (let [to-light (to-light light (:pt interx))]
-    (when (light-visible? interx light objects)
+    (when (or (not (:shadows? (:settings scene)))
+              (light-visible? interx light (:objects scene)))
       (let [cos (v/dot (:normal interx) to-light)]
         (when-not (neg? cos)
           (let [I (:I light)
@@ -169,9 +170,10 @@ intersection (or nil.) This implements Lambertian shading."
 (defn specular
   "Given a single light and an intersection, produce the specular color
 contribution."
-  [objects interx light]
+  [scene interx light]
   (let [to-light (to-light light (:pt interx))]
-    (when (light-visible? interx light objects)
+    (when (or (not (:shadows? (:settings scene)))
+              (light-visible? interx light (:objects scene)))
       (let [to-viewer (v/unit (v/neg (:dir (:ray interx))))
             halfway (v/unit (v/avg to-light to-viewer))
             cos (v/dot (:normal interx) halfway)]
@@ -211,13 +213,12 @@ contribution."
   "Given a scene and an intersection, produce [r g b] intensity value, or nil."
   [scene interx]
   (let [lights (:lights scene)
-        objects (:objects scene)
         ray (:ray interx)
         amb (ambient scene interx)
         diffs (when (-> scene :settings :diffuse?)
-                (map (partial diffuse objects interx) lights))
+                (map (partial diffuse scene interx) lights))
         specs (when (-> scene :settings :specular?)
-                (map (partial specular objects interx) lights))
+                (map (partial specular scene interx) lights))
         mirror (when (<= (:bounces ray)
                          (:mirror-limit (:settings scene)))
                  (mirror-reflection scene interx))
