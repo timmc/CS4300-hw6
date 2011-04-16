@@ -36,7 +36,7 @@
               :specular? true
               :shadows? true
               :mirror-limit 1
-              :ambient-intensity 1.0
+              :ambient 1.0
               :reflectivity 0.25}
    :lights []
    :objects []
