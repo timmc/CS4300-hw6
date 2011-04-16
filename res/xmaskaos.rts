@@ -1,9 +1,10 @@
-## Four white spheres with light sources to make a fractal.
-se x x a 6 0.1
+##Four spheres stacked as terahedron produce a Sierpinski-like fractal.
+##Recommend using 95% reflectivity.
+se x x x 8 0.05
 ## camera below origin, looking up
-vv -0.1 -0.3 -1.4 0.01 0.03 1
+vv -0.2 -0.4 -1.4 0.2 0.4 1.4
 cc 0
-## Spheres will only be colored by specular lighting and reflection
+## Spheres colored using ambient materials.
 ## Base spheres (radius 1) are located (/ (Math/sin 60°)) from origin
 ## Top sphere's center is located at top of tetrahedron of centers,
 ## or (Math/sqrt (- 4 (#(* % %) radius)))
@@ -19,6 +20,4 @@ ss 3
 am 0.2 1 0.3
 vv 0 0 1.6330 0 0 1
 ss 4
-## Directional lights pointing at upper tetrahedron faces -- not really in use
-vv 0 0 10 0 0 0
-pl 5 0.6
+
