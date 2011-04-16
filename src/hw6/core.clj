@@ -86,6 +86,8 @@
         (fail (str "Could not parse " field " as a boolean: " val))))
     (fail (str "Expected " field " after " flag))))
 
+(def scene-settings-keys [:diffuse? :specular? :shadows? :reflectivity])
+
 (defn read-arguments
   "Read command-line arguments into a settings map:
 -f * :in = vector of filenames"
@@ -93,9 +95,7 @@
   (loop [settings {:in []
                    :w 512
                    :h 512
-                   ;; :diffuse?
-                   ;; :specular?
-                   ;; :shadows?
+                   ;; plus the scene-settings-keys
                    }
          args args]
     (if (empty? args)
@@ -125,6 +125,10 @@
                                    (read-boolean
                                     remain "shadows" "-sh"))
                          (rest remain))
+            "-rf" (recur (assoc-in settings [:reflectivity]
+                                   (/ (read-posint remain "reflectivity %" flag)
+                                      100.0))
+                         (rest remain))
             (fail (str "Unknown argument: " flag)))))))
 
 (defn -main
@@ -136,7 +140,7 @@
                  (InputStreamReader. System/in))]
     (let [lines (line-seq (BufferedReader. reader))
           scene (p/parse lines)
-          overrides (select-keys settings [:diffuse? :specular? :shadows?])
+          overrides (select-keys settings scene-settings-keys)
           scene (update-in scene [:settings] merge overrides)]
       (println (format "Loaded %d objects and %d light sources."
                        (count (:objects scene))

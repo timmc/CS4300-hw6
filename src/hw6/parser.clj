@@ -7,6 +7,7 @@
 ;;; - material is :ambient={:color=[r g b]} :diffuse={:color=[r g b]}
 ;;;     :specular={:color=[r g b] :exp=int}
 ;;; - settings is :diffuse? :specular? :shadows? :mirror-limit :ambient
+;;;     :reflectivity
 ;;; - camera is :i => :pose=vertex :xfrom=3x3mat (from camera to world)
 ;;; - light is :type=#{:point :directional} :I :i
 ;;;   - :point also has :source (from :i=>vertex)
@@ -33,7 +34,8 @@
               :specular? true
               :shadows? true
               :mirror-max 1
-              :ambient-intensity 1.0}
+              :ambient-intensity 1.0
+              :reflectivity 0.25}
    :lights []
    :objects []
    :last-material {:ambient {:color [0.2 0.2 0.2]}
