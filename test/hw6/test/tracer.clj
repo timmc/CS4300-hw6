@@ -90,11 +90,11 @@
             {:obj s6 :pt [0 5 0] :dist 3.5 :normal [0 -1 0] :ray ray}])))
    ;; from one direction...
   (let [ray {:start [0 -10 0] :dir [0 1 0] :bounces 0}]
-    (is (= (closest-hit (ray-hits y-beads ray))
+    (is (= (closest-hit (ray-hits y-beads ray) nil)
            {:obj s0 :pt [0 -1 0] :dist 9 :normal [0 -1 0] :ray ray})))
    ;; ...and the other.
   (let [ray {:start [0 10 0] :dir [0 -20 0] :bounces 0}]
-    (is (= (closest-hit (ray-hits y-beads ray))
+    (is (= (closest-hit (ray-hits y-beads ray) nil)
            {:obj s6 :pt [0 7 0] :dist 3 :normal [0 1 0] :ray ray}))))
 
 (deftest cam-coords

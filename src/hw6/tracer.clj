@@ -53,14 +53,37 @@ are required to reach it."
 (defn ray-hits
   "Compute a seq of all object intersections in the scene with the given ray."
   [objects ray]
-  (filter (complement nil?) (map #(intersect % ray) objects)))
+  (->> (map #(intersect % ray) objects)
+       (filter (complement nil?) ,,,)))
+
+(defn drop-first-if
+  "If the seq is not empty, drop the first element if it matches the predicate."
+  [pred s]
+  (when-let [s (seq s)]
+    (if (pred (first s))
+      (rest s)
+      s)))
+
+(def ^{:doc "Radius of approximate equivalence for intersections" :dynamic true}
+  *intersection-equiv-dist* 0.00001)
+
+(defn interx=
+  "Detect if two intersections are probably the same."
+  [i1 i2]
+  (and (not (nil? i1))
+       (not (nil? i2))
+       (= (:obj i1) (:obj i2))
+       (< (v/mag (v/<-pts (:pt i1) (:pt i2))) *intersection-equiv-dist*)))
 
 (defn closest-hit
-  "Find the closest ray hit in the scene, or nil."
-  [hits]
-  (if (seq hits)
-    (reduce (fn closer [h1 h2] (if (< (:dist h1) (:dist h2)) h1 h2)) hits)
-    nil))
+  "Get the closest hit from a seq of intersections, excluding any match to the
+optionally provided intersection. (May return nil.)"
+  [hits exclude]
+  (->> (sort-by :dist hits)
+       (drop-first-if #(interx= exclude %) ,,,)
+       (first ,,,)))
+
+;;;; Camera
 
 (def ^{:doc "Camera's field of view in degrees." :dynamic true}
   *camera-fov* 60)
@@ -123,31 +146,13 @@ rays from the viewpoint as {:pixel [x y], :ray <ray>}."
   [light pt]
   (v/mag (v/<-pts (:source light) pt)))
 
-(defn drop-first-if
-  "If the seq is not empty, drop the first element if it matches the predicate."
-  [pred s]
-  (when-let [s (seq s)]
-    (if (pred (first s))
-      (rest s)
-      s)))
-
-(def ^{:doc "Radius of approximate equivalence for intersections" :dynamic true}
-  *intersection-equiv-dist* 0.00001)
-
-(defn interx=
-  "Detect if two intersections are probably the same."
-  [i1 i2]
-  (and (= (:obj i1) (:obj i2))
-       (< (v/mag (v/<-pts (:pt i1) (:pt i2))) *intersection-equiv-dist*)))
-
 (defn light-visible?
   [interx light objects]
   (let [origin (:pt interx)
         ray {:start origin, :dir (to-light light origin), :bounces 0}
-        close-hits (sort-by :dist (ray-hits objects ray))
-        candidates (drop-first-if (partial interx= interx) close-hits)]
-    (or (empty? candidates)
-        (> (:dist (first candidates)) (light-distance light origin)))))
+        interloper (closest-hit (ray-hits objects ray) interx)]
+    (or (nil? interloper)
+        (> (:dist interloper) (light-distance light origin)))))
 
 (defn diffuse
   "Calculate the [r g b] diffuse lighting component for one light and one ray
@@ -185,29 +190,36 @@ contribution."
         perp (v/diff outcident para)]
     (v/sum (v/neg perp) para)))
 
-(defn ray->rgb
-  "Given a scene and a ray, produce an [r g b] intensity value, or nil."
-  [scene ray]
-  (let [objects (:objects scene)
-        hits (ray-hits objects ray)
-        interx (closest-hit hits)]
-    (when interx
-      (let [lights (:lights scene)
-            amb (ambient scene interx)
-            diffs (when (-> scene :settings :diffuse?)
-                    (map (partial diffuse objects interx) lights))
-            specs (when (-> scene :settings :specular?)
-                    (map (partial specular objects interx) lights))
-            mirror (when (<= (:bounces ray)
-                             (:mirror-limit (:settings scene)))
-                     (let [refl {:start (:pt interx)
-                                 :dir (reflect (v/unit (:normal interx))
-                                               (:dir ray))
-                                 :bounces (inc (:bounces ray))}]
-                       (ray->rgb scene refl)))
-            rgbs (filter (complement nil?) (concat [amb mirror] diffs specs))]
-        (when (seq rgbs)
-          (apply v/sum rgbs))))))
+(declare interx->rgb)
+
+(defn mirror-reflection
+  "Compute the mirror reflection color for an intersection, or nil."
+  [scene oldx]
+  (let [ray (:ray oldx)
+        refl {:start (:pt oldx)
+              :dir (reflect (v/unit (:normal oldx))
+                            (:dir ray))
+              :bounces (inc (:bounces ray))}]
+    (when-let [nextx (closest-hit (ray-hits (:objects scene) refl) oldx)]
+      (interx->rgb scene nextx))))
+
+(defn interx->rgb
+  "Given a scene and an intersection, produce [r g b] intensity value, or nil."
+  [scene interx]
+  (let [lights (:lights scene)
+        objects (:objects scene)
+        ray (:ray interx)
+        amb (ambient scene interx)
+        diffs (when (-> scene :settings :diffuse?)
+                (map (partial diffuse objects interx) lights))
+        specs (when (-> scene :settings :specular?)
+                (map (partial specular objects interx) lights))
+        mirror (when (<= (:bounces ray)
+                         (:mirror-limit (:settings scene)))
+                 (mirror-reflection scene interx))
+        rgbs (filter (complement nil?) (concat [amb mirror] diffs specs))]
+    (when (seq rgbs)
+      (apply v/sum rgbs))))
 
 (defn rgb->int
   "Given an [r g b] intensity, clamp components to unit range and produce an
@@ -223,13 +235,14 @@ RGB int."
 (defn render
   [scene, ^BufferedImage bi, render-status]
   (let [w (.getWidth bi)
-        h (.getHeight bi)]
+        h (.getHeight bi)
+        objects (:objects scene)]
     (dosync (ref-set render-status
                      (assoc @render-status :status :working)))
     (doseq [{[vx vy] :pixel
              pixel-ray :ray} (image-rays (:camera scene) w h)]
-      (let [rgb (ray->rgb scene pixel-ray)]
-        (when rgb
+      (when-let [interx (closest-hit (ray-hits objects pixel-ray) nil)]
+        (when-let [rgb (interx->rgb scene interx)]
           (.setRGB bi vx vy (rgb->int rgb)))))
     (dosync (ref-set render-status
                      (assoc @render-status :status :done)))))
