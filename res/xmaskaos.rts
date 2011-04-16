@@ -1,23 +1,51 @@
 ##Four spheres stacked as terahedron produce a Sierpinski-like fractal.
 ##Recommend using 95% reflectivity.
-se x x x 8 0.05
+
+se x x x 6 0.2
+
 ## camera below origin, looking up
 vv -0.2 -0.4 -1.4 0.2 0.4 1.4
+##vv 0 0 -1 0 0 1
 cc 0
-## Spheres colored using ambient materials.
+
+## Spheres are colored for ambient lighting.
+## Diffuse and specular lighting produce weird effects
+
 ## Base spheres (radius 1) are located (/ (Math/sin 60°)) from origin
 ## Top sphere's center is located at top of tetrahedron of centers,
 ## or (Math/sqrt (- 4 (#(* % %) radius)))
+
 am 0.1 0.5 1
+dm 0.1 0.5 1
+sm 0.1 0.5 1 2
 vv  0  1.1547 0 0 0 1
 ss 1
+
 am 1 0.2 0.8
+dm 1 0.2 0.8
+sm 1 0.2 0.8 2
 vv -1 -0.5774 0 0 0 1
 ss 2
+
 am 0.2 0.8 0.8
+dm 0.2 0.8 0.8
+sm 0.2 0.8 0.8 2
 vv  1 -0.5774 0 0 0 1
 ss 3
+
 am 0.2 1 0.3
+dm 0.2 1 0.3
+sm 0.2 1 0.3 2
 vv 0 0 1.6330 0 0 1
 ss 4
 
+## Three bright light sources pointed at top tetrahedral faces.
+
+##vv 0 -5 5  0 5 -5
+##pl 5 0.4
+
+##vv 5 3 5  -5 -3 -5
+##pl 6 0.4
+
+##vv -5 3 5  5 -3 -5
+##pl 7 0.4
