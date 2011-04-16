@@ -1,7 +1,7 @@
 ##Four spheres stacked as terahedron produce a Sierpinski-like fractal.
 ##Recommend using 95% reflectivity.
 
-se x x x 6 0.2
+se x x x 6 0.05
 
 ## camera below origin, looking up
 vv -0.2 -0.4 -1.4 0.2 0.4 1.4
