@@ -216,8 +216,8 @@ contribution."
                 (map (partial diffuse scene interx) lights))
         specs (when (-> scene :settings :specular?)
                 (map (partial specular scene interx) lights))
-        mirror (when (<= (:bounces ray)
-                         (:mirror-limit (:settings scene)))
+        mirror (when (< (:bounces ray)
+                        (:mirror-limit (:settings scene)))
                  (mirror-reflection scene interx))
         rgbs (filter (complement nil?) (concat [amb mirror] diffs specs))]
     (when (seq rgbs)
