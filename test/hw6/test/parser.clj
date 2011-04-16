@@ -48,3 +48,20 @@
           cent (v/xform transform [0 0 1])]
       (is (= cent [-1 7.5 6])))))
 
+(deftest expansion
+  (let [cam-no-i {:pose {:start [0 0 0] :dir [0 0 42]}}
+        scene {:vertices [{:start [1 2 3] :dir [4 5 6]}
+                          {:start [0 10 0] :dir [-1 -1 0]}
+                          {:start [0 0 0] :dir [0 1 0]} ; illegal camera
+                          ]
+               :all-cameras (seq [{:i 2}
+                                  cam-no-i
+                                  {:i 0}])}]
+    (is (= (get-vertex scene 0) {:start [1 2 3] :dir [4 5 6]}))
+    (let [cam1 (expand-camera scene {:i 1})]
+      (is (= (:pose cam1) (get-vertex scene 1)))
+      (is (seq (:xfrom cam1))))
+    (is (nil? (expand-camera scene {:i 2}))) ;; points along y axis
+    (is (not (nil? (expand-camera scene cam-no-i)))) ;; safe to expand w/o :i
+    (is (= (produce-camera scene)
+           (expand-camera scene cam-no-i)))))

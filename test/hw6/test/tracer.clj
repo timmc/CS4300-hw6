@@ -108,7 +108,7 @@
 
 (deftest view-rays
   (binding [*camera-fov* 90]
-    (let [camera (p/expand-camera {:pose {:start [10 0 0] :dir [0 0 -100]}} nil)
+    (let [camera (p/expand-camera {} {:pose {:start [10 0 0] :dir [0 0 -100]}})
           rays (image-rays camera 3 5)
           {pixel00 :pixel
            {start00 :start

@@ -19,6 +19,7 @@
 
 ;;; A scene is a map of:
 ;;; - :vertices = vector, where vertex ID = index
+;;; - :all-cameras = seq of proto cameras, most recently seen first
 ;;; - :camera = camera
 ;;; - :settings = settings
 ;;; - :lights = vector of lights
@@ -29,7 +30,8 @@
 
 (def empty-scene
   {:vertices []
-   :camera {:pose {:start [0 0 0] :dir [0 0 -1]}}
+   :all-cameras [{:pose {:start [0 0 0] :dir [0 0 -1]}}]
+   :camera nil
    :settings {:diffuse? true
               :specular? true
               :shadows? true
@@ -100,7 +102,7 @@
              conj {:type :directional :i (parse-int i) :I (parse-float I)}))
 ;; camera
 (defmethod parse-line "cc" [scene _ i]
-  (assoc-in scene [:camera] {:i (parse-int i)}))
+  (update-in scene [:all-cameras] #(cons {:i (parse-int i)} %)))
 
 ;;;; Fill-in
 
@@ -139,7 +141,10 @@
         :directional (if (:direction light)
                        light
                        (assoc light :direction (:dir vertex))))))
-(defn expand-camera [camera scene]
+
+(defn expand-camera
+  "Expand a camera using scene data, or produce nil if invalid."
+  [scene camera]
   (let [camera (if (:pose camera)
                  camera
                  (assoc camera :pose (get-vertex scene (:i camera))))]
@@ -151,9 +156,16 @@
             xcu (v/unit xc)
             ycu (v/cross zcu xcu)
             xfrom (v/xformer xcu ycu zcu)]
-        (when (< (v/mag xc) 0.00001) ; TODO revert to older camera
-          (throw (Exception. "Camera xc too close to zero.")))
-        (assoc camera :xfrom xfrom)))))
+        ;; Camera xc must not be too close to zero.
+        (when (>= (v/mag xc) 0.00001)
+          (assoc camera :xfrom xfrom))))))
+
+(defn produce-camera
+  "Produce the first valid expanded camera from the scene, starting with most
+recently defined one."
+  [scene]
+  (first (drop-while nil? (map (partial expand-camera scene)
+                               (:all-cameras scene)))))
 
 (defn expand
   "Fill in vertex values by index, etc."
@@ -161,7 +173,7 @@
   (-> scene
       (update-in ,,, [:objects] (fn [o] (map #(expand-object % scene) o)))
       (update-in ,,, [:lights] (fn [l] (map #(expand-light % scene) l)))
-      (update-in ,,, [:camera] expand-camera scene)))
+      (assoc-in ,,, [:camera] (produce-camera scene))))
 
 ;;;; Main loop
 
