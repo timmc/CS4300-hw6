@@ -46,6 +46,8 @@
 
 (defn parse-float [x] (Float/parseFloat x))
 (defn parse-int [x] (Integer/parseInt x 10))
+(defn clamp-unity [x] (min (max x 0) 1))
+(def parse-unity (comp clamp-unity parse-float))
 
 (defmulti parse-line
   "Fold the given space-split line into the scene. (Return updated scene.)"
@@ -63,15 +65,15 @@
                conj {:start [x y z] :dir [dx dy dz]})))
 ;; materials
 (defmethod parse-line "am" [scene _ & args]
-  (let [[r g b] (map parse-float args)]
+  (let [[r g b] (map parse-unity args)]
     (assoc-in scene [:last-material :ambient]
               {:color [r g b]})))
 (defmethod parse-line "dm" [scene _ & args]
-  (let [[r g b] (map parse-float args)]
+  (let [[r g b] (map parse-unity args)]
     (assoc-in scene [:last-material :diffuse]
               {:color [r g b]})))
 (defmethod parse-line "sm" [scene _ r g b p]
-  (let [[r g b] (map parse-float [r g b])
+  (let [[r g b] (map parse-unity [r g b])
         p (parse-int p)]
     (assoc-in scene [:last-material :specular]
               {:color [r g b] :exp p})))
@@ -93,14 +95,14 @@
               :specular? (= s "s")
               :shadows? (= a "a")
               :mirror-limit (parse-int m)
-              :ambient (parse-float I)}))
+              :ambient (parse-unity I)}))
 ;; lights
 (defmethod parse-line "pl" [scene _ i I]
   (update-in scene [:lights]
-             conj {:type :point :i (parse-int i) :I (parse-float I)}))
+             conj {:type :point :i (parse-int i) :I (parse-unity I)}))
 (defmethod parse-line "dl" [scene _ i I]
   (update-in scene [:lights]
-             conj {:type :directional :i (parse-int i) :I (parse-float I)}))
+             conj {:type :directional :i (parse-int i) :I (parse-unity I)}))
 ;; camera
 (defmethod parse-line "cc" [scene _ i]
   (update-in scene [:all-cameras] #(cons {:i (parse-int i)} %)))

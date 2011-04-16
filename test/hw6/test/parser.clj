@@ -3,6 +3,12 @@
   (:use [clojure.test])
   (:require [hw6.vec3 :as v]))
 
+(deftest materials
+  (let [amb (parse-line {:last-material {:ambient {:color [0 0 0]}}}
+                        "am" "1.2" "-2" "0.42")]
+    (is (= (map float (-> amb :last-material :ambient :color))
+           (map float [1 0 0.42])))))
+
 (deftest vertices
   (is (= (parse-line {:vertices [{:start [0 0 0] :dir [10 20 30]}]}
                      "vv" "1" "2" "3" "4" "5" "6")
