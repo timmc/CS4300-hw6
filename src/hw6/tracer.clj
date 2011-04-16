@@ -192,6 +192,9 @@ contribution."
 
 (declare interx->rgb)
 
+(def ^{:doc "Reflectiveness of surfaces." :dynamic true}
+  *reflectivity* 0.25)
+
 (defn mirror-reflection
   "Compute the mirror reflection color for an intersection, or nil."
   [scene oldx]
@@ -201,7 +204,8 @@ contribution."
                             (:dir ray))
               :bounces (inc (:bounces ray))}]
     (when-let [nextx (closest-hit (ray-hits (:objects scene) refl) oldx)]
-      (interx->rgb scene nextx))))
+      (when-let [raw (interx->rgb scene nextx)]
+        (v/scale raw *reflectivity*)))))
 
 (defn interx->rgb
   "Given a scene and an intersection, produce [r g b] intensity value, or nil."
