@@ -51,9 +51,10 @@
   "Fold the given space-split line into the scene. (Return updated scene.)"
   (fn [scene code & args] code))
 (defmethod parse-line :default [scene unknown & _]
-  (when-not (or (#{"ts" "tx" "rx" "hx" "ux" "ix" "so" "eo" "io" "rv"} unknown)
-                (= (.substring unknown 0 2) "##"))
-    (throw (Exception. (str "Could not parse line starting with " unknown))))
+  (if (#{"ts" "tx" "rx" "hx" "ux" "ix" "so" "eo" "io" "rv"} unknown)
+    (println "Ignoring unimplemented command:" unknown)
+    (when-not (= (.substring unknown 0 2) "##")
+      (println "Ignoring unknown command:" unknown)))
   scene)
 ;; vertices
 (defmethod parse-line "vv" [scene _ & args]

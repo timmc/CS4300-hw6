@@ -50,7 +50,9 @@
 
 (deftest failures
   (is (thrown-with-msg? Exception #"parse.*ss 1 2 3"
-        (parse ["## foo" "sm 0 0 0 1" "ss 1 2 3" "vv 1 2 3 4 5 6"]))))
+        (parse ["## foo" "sm 0 0 0 1" "ss 1 2 3" "vv 1 2 3 4 5 6"])))
+  (binding [*out* (java.io.StringWriter.)]
+    (is (parse ["un implemented"]))))
 
 (deftest regressions
   ;; Was overwriting optional/non-standard settings
