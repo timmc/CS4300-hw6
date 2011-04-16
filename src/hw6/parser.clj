@@ -75,6 +75,7 @@
 (defmethod parse-line "sm" [scene _ r g b p]
   (let [[r g b] (map parse-unity [r g b])
         p (parse-int p)]
+    ;; TODO assert or clamp p to range [1,128]
     (assoc-in scene [:last-material :specular]
               {:color [r g b] :exp p})))
 ;; objects
@@ -90,6 +91,7 @@
               :material (:last-material scene)}))
 ;; settings
 (defmethod parse-line "se" [scene _ d s a m I]
+  ;; TODO throw if d s a are not turned off by x
   (update-in scene [:settings] merge
              {:diffuse? (= d "d")
               :specular? (= s "s")
