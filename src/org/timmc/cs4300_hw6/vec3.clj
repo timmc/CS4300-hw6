@@ -25,7 +25,7 @@ returns it unchanged."
   (let [m (mag v)]
     (if (zero? m)
       v
-      (scale v (/ m)))))
+      (scale v (/ (float 1) m)))))
 
 (defn sum
   "Compute sum of two vectors."
@@ -66,7 +66,7 @@ returns it unchanged."
 (defn avg
   "Average multiple vectors together."
   [& vs]
-  (scale (apply sum vs) (/ (count vs))))
+  (scale (apply sum vs) (/ (float 1) (count vs))))
 
 (defn xformer
   "Create a 3x3 transformation matrix from 3 basis vectors."

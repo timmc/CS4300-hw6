@@ -19,13 +19,16 @@ are required to reach it."
 (defmulti intersect
   "Intersect an object and a ray. Return the first intersection or nil."
   (fn [o r] (:type o)))
+
 (defmethod intersect :default [_ _] nil)
+
 (defmethod intersect :sphere [{r :radius c :center :as obj}
                               {q :start d :dir :as ray}]
   (let [q-c (v/sum q (v/scale c -1))
-        A (v/dot d d)
-        B (v/dot (v/scale d 2) q-c)
-        C (- (v/dot q-c q-c) (* r r))
+        ;; coerce to floating point to avoid Ratio
+        A (float (v/dot d d))
+        B (float (v/dot (v/scale d 2) q-c))
+        C (float (- (v/dot q-c q-c) (* r r)))
         det (- (* B B) (* 4 A C))]
     (when-not (neg? det)
       (let [t1 (/ (+ (- B) (Math/sqrt det)) (* 2 A))
@@ -36,11 +39,12 @@ are required to reach it."
           (let [{pt :pt, dist :dist} (along-ray ray t)
                 normal (v/unit (v/<-pts c pt))]
             {:obj obj, :pt pt, :dist dist, :normal normal, :ray ray}))))))
+
 (defmethod intersect :plane [{pt :pt normal :normal :as obj}
                              {q :start d :dir :as ray}]
   (let [unormal (v/unit normal)
-        dist-origin (v/dot unormal pt)
-        angle-from-perp (v/dot d unormal)]
+        dist-origin (float (v/dot unormal pt))
+        angle-from-perp (float (v/dot d unormal))]
     (when-not (zero? angle-from-perp)
       (let [t (/ (- dist-origin (v/dot q unormal)) angle-from-perp)]
         (when (pos? t)
@@ -65,7 +69,7 @@ are required to reach it."
       s)))
 
 (def ^{:doc "Radius of approximate equivalence for intersections" :dynamic true}
-  *intersection-equiv-dist* 0.00001)
+  *intersection-equiv-dist* (float 0.00001))
 
 (defn interx=
   "Detect if two intersections are probably the same."
@@ -86,12 +90,12 @@ optionally provided intersection. (May return nil.)"
 ;;;; Camera
 
 (def ^{:doc "Camera's field of view in degrees." :dynamic true}
-  *camera-fov* 60)
+  *camera-fov* (float 60))
 
 (defn pixel->cam-coord
   "Convert a canvas pixel to an image-plane point in the camera's coordinates."
   [w h x y]
-  (let [flipspect (float (- (/ h w)))
+  (let [flipspect (float (- (/ (float h) (float w))))
         ;; Use the center of each pixel
         pix-mid (float 0.5)
         half-plane (float 0.5)
