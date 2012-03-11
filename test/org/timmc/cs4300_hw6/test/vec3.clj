@@ -1,5 +1,5 @@
-(ns hw6.test.vec3
-  (:use [hw6.vec3])
+(ns org.timmc.cs4300-hw6.test.vec3
+  (:use [org.timmc.cs4300-hw6.vec3])
   (:use [clojure.test])
   (:require [incanter.core :as i]))
 

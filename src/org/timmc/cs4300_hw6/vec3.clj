@@ -1,4 +1,4 @@
-(ns hw6.vec3
+(ns org.timmc.cs4300-hw6.vec3
   (:use [incanter.core :only (matrix mmult mult trans)]))
 
 ;;; All vectors here are 3-vectors of [x y z]

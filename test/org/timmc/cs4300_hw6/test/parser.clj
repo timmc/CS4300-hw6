@@ -1,7 +1,7 @@
-(ns hw6.test.parser
-  (:use [hw6.parser])
+(ns org.timmc.cs4300-hw6.test.parser
+  (:use [org.timmc.cs4300-hw6.parser])
   (:use [clojure.test])
-  (:require [hw6.vec3 :as v]))
+  (:require [org.timmc.cs4300-hw6.vec3 :as v]))
 
 (deftest materials
   (let [amb (parse-line {:last-material {:ambient {:color [0 0 0]}}}

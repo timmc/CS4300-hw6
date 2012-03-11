@@ -1,7 +1,7 @@
-(ns hw6.core
+(ns org.timmc.cs4300-hw6.core
   (:require [clojure.string :as str])
-  (:require [hw6.parser :as p]
-            [hw6.tracer :as rt])
+  (:require (org.timmc.cs4300-hw6 [parser :as p]
+                                  [tracer :as rt]))
   (:import (java.io BufferedReader StringReader InputStreamReader)
            (java.awt Dimension Graphics2D)
            (java.awt.image BufferedImage)

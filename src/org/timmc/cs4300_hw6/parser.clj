@@ -1,6 +1,6 @@
-(ns hw6.parser
-  (:require [clojure.string :as str])
-  (:require [hw6.vec3 :as v]))
+(ns org.timmc.cs4300-hw6.parser
+  (:require [clojure.string :as str]
+            [org.timmc.cs4300-hw6.vec3 :as v]))
 
 ;;; All data represented as maps:
 ;;; - vertex is {:start [x y z] :dir [x y z]}

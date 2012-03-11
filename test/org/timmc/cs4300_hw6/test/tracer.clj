@@ -1,8 +1,8 @@
-(ns hw6.test.tracer
-  (:use [hw6.tracer])
+(ns org.timmc.cs4300-hw6.test.tracer
+  (:use [org.timmc.cs4300-hw6.tracer])
   (:use [clojure.test])
-  (:require [hw6.parser :as p])
-  (:require [hw6.vec3 :as v])
+  (:require (org.timmc.cs4300-hw6 [parser :as p]
+                                  [vec3 :as v]))
   (:import (java.math BigDecimal RoundingMode)))
 
 ;; From hw4 test utils

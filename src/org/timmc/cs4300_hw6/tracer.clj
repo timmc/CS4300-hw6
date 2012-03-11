@@ -1,5 +1,5 @@
-(ns hw6.tracer
-  (:require [hw6.vec3 :as v])
+(ns org.timmc.cs4300-hw6.tracer
+  (:require [org.timmc.cs4300-hw6.vec3 :as v])
   (:import (java.awt Graphics2D)
            (java.awt.image BufferedImage)))
 
