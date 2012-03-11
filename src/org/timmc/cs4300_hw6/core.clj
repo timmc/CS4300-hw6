@@ -22,15 +22,15 @@
           ;; one final repaint to catch the last bit of data.
           (.repaint canvas)))
 
-(defn make-canvas
+(defn ^JComponent make-canvas
   "Make a canvas that renders once."
-  [scene bi settings]
+  [scene ^BufferedImage bi settings]
   (let [jc (proxy [JComponent] []
 	     (paint [^Graphics2D g]
                (.drawImage g bi nil 0 0)
                (when-not (= (:status @render-status) :done) ;; OK if late read
                  (future (Thread/sleep 1000)
-                         (.repaint this))))
+                         (.repaint ^JComponent this))))
              (update [_]))]
     (doto jc
       (.setDoubleBuffered true)

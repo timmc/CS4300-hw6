@@ -52,7 +52,7 @@
 (defmulti parse-line
   "Fold the given space-split line into the scene. (Return updated scene.)"
   (fn [scene code & args] code))
-(defmethod parse-line :default [scene unknown & _]
+(defmethod parse-line :default [scene ^String unknown & _]
   (if (#{"ts" "tx" "rx" "hx" "ux" "ix" "so" "eo" "io" "rv"} unknown)
     (println "Ignoring unimplemented command:" unknown)
     (when-not (= (.substring unknown 0 2) "##")
