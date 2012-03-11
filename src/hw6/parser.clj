@@ -1,5 +1,5 @@
 (ns hw6.parser
-  (:require [clojure.contrib.string :as str])
+  (:require [clojure.string :as str])
   (:require [hw6.vec3 :as v]))
 
 ;;; All data represented as maps:
@@ -187,7 +187,7 @@ recently defined one."
   [scene linenum text]
   (if (str/blank? text)
     scene
-    (let [pieces (str/split #"\s+" text)]
+    (let [pieces (str/split text #"\s+")]
       (try (apply parse-line scene pieces)
            (catch Exception e
              (throw (Exception.

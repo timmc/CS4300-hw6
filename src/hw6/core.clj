@@ -1,5 +1,5 @@
 (ns hw6.core
-  (:require [clojure.contrib.string :as str])
+  (:require [clojure.string :as str])
   (:require [hw6.parser :as p]
             [hw6.tracer :as rt])
   (:import (java.io BufferedReader StringReader InputStreamReader)
