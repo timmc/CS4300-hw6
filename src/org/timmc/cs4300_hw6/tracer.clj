@@ -235,17 +235,16 @@ RGB int."
 ;;;; Main loop
 
 (defn render
+  "Render the scene graph to the image, updating render-status atom to
+:status :working at first and :status :done when finished."
   [scene, ^BufferedImage bi, render-status]
   (let [w (.getWidth bi)
         h (.getHeight bi)
         objects (:objects scene)]
-    (dosync (ref-set render-status
-                     (assoc @render-status :status :working)))
+    (swap! render-status assoc :status :working)
     (doseq [{[vx vy] :pixel
              pixel-ray :ray} (image-rays (:camera scene) w h)]
       (when-let [interx (closest-hit (ray-hits objects pixel-ray) nil)]
         (when-let [rgb (interx->rgb scene interx)]
           (.setRGB bi vx vy (rgb->int rgb)))))
-    (dosync (ref-set render-status
-                     (assoc @render-status :status :done)))))
-
+    (swap! render-status assoc :status :done)))

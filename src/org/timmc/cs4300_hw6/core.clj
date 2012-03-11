@@ -11,13 +11,13 @@
 
 (def ^{:doc "Scene render progress map. :status may be :init, :working, or
 :done, and :completion is a float from [0 1]."}
-  *render-status* (ref {:status :init, :completion 0}))
+  render-status (atom {:status :init, :completion 0}))
 
 (defn start-render
   "Start a renderer writing to the given BufferedImage."
   [scene, bi, ^JComponent canvas]
   ;; TODO use a normal Thread, since exceptions only appear on deref
-  (future (try (rt/render scene bi *render-status*)
+  (future (try (rt/render scene bi render-status)
                (catch Exception e (.printStackTrace e)))
           ;; one final repaint to catch the last bit of data.
           (.repaint canvas)))
@@ -28,7 +28,7 @@
   (let [jc (proxy [JComponent] []
 	     (paint [^Graphics2D g]
                (.drawImage g bi nil 0 0)
-               (when-not (= (:status @*render-status*) :done)
+               (when-not (= (:status @render-status) :done) ;; OK if late read
                  (future (Thread/sleep 1000)
                          (.repaint this))))
              (update [_]))]
