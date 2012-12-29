@@ -169,7 +169,8 @@ intersection (or nil.) This implements Lambertian shading."
         (when-not (neg? cos)
           (let [I (:I light)
                 dc (-> interx :obj :material :diffuse :color)]
-            (v/scale dc (* I cos))))))))
+            (v/scale (v/elop * dc (:color light))
+                     (* I cos))))))))
 
 (defn specular
   "Given a single light and an intersection, produce the specular color
@@ -186,7 +187,8 @@ contribution."
                 cosp (Math/pow cos (:exp mat))
                 I (:I light)
                 sc (:color mat)]
-            (v/scale sc (* I cosp))))))))
+            (v/scale (v/elop * sc (:color light))
+                     (* I cosp))))))))
 
 (defn reflect
   "Reflect an incident ray given a unit normal vector."
@@ -250,5 +252,6 @@ RGB int."
              pixel-ray :ray} (image-rays (:camera scene) w h)]
       (when-let [interx (closest-hit (ray-hits objects pixel-ray) nil)]
         (when-let [rgb (interx->rgb scene interx)]
-          (.setRGB bi vx vy (rgb->int rgb)))))
+          (.setRGB bi vx vy (rgb->int rgb))))
+      (swap! render-status update-in [:completion] inc))
     (swap! render-status assoc :status :done)))

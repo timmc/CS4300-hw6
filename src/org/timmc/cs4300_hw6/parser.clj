@@ -42,7 +42,8 @@
    :objects []
    :last-material {:ambient {:color [0.2 0.2 0.2]}
                    :diffuse {:color [1.0 1.0 1.0]}
-                   :specular {:color [1.0 1.0 1.0] :exp 64}}})
+                   :specular {:color [1.0 1.0 1.0] :exp 64}}
+   :last-light-settings {:color [1.0 1.0 1.0]}})
 
 (defn parse-float [x] (Float/parseFloat x))
 (defn parse-int [x] (Integer/parseInt x 10))
@@ -78,6 +79,9 @@
     ;; TODO assert or clamp p to range [1,128]
     (assoc-in scene [:last-material :specular]
               {:color [r g b] :exp p})))
+;; lights
+(defmethod parse-line "lc" [scene _ r g b]
+  (assoc-in scene [:last-light-settings :color] (map parse-unity [r g b])))
 ;; objects
 (defmethod parse-line "ss" [scene _ i]
   (update-in scene [:objects] conj
@@ -101,10 +105,12 @@
 ;; lights
 (defmethod parse-line "pl" [scene _ i I]
   (update-in scene [:lights]
-             conj {:type :point :i (parse-int i) :I (parse-unity I)}))
+             conj {:type :point :i (parse-int i) :I (parse-unity I)
+                   :color (get-in scene [:last-light-settings :color])}))
 (defmethod parse-line "dl" [scene _ i I]
   (update-in scene [:lights]
-             conj {:type :directional :i (parse-int i) :I (parse-unity I)}))
+             conj {:type :directional :i (parse-int i) :I (parse-unity I)
+                   :color (get-in scene [:last-light-settings :color])}))
 ;; camera
 (defmethod parse-line "cc" [scene _ i]
   (update-in scene [:all-cameras] #(cons {:i (parse-int i)} %)))

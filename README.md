@@ -1,6 +1,7 @@
 # Ray tracer for CS 4300
 
 Progressive-render ray tracer accepting .rts scene specification files.
+(See ./spec/ for specification, and "Mods" section for deviations from it.)
 
 If you want a *good* ray tracer with all the usual features, may I recommend
 looking at https://code.google.com/p/cray/ instead.
@@ -42,6 +43,10 @@ All options may be repeated, but unless otherwise noted as cumulative, the last
 instance of an option will be the one that takes effect. Boolean options may be
 specified as true, false, on, off, yes, no, 1, or 0. Integer options must be
 decimal integers.
+
+## Mods
+
+* Added `lc` spec lines for light color: r g b in [0,1], defaulting to white.
 
 ## Known bugs
 
