@@ -102,6 +102,9 @@
               :shadows? (= a "a")
               :mirror-limit (parse-int m)
               :ambient (parse-unity I)}))
+;; reflectivity
+(defmethod parse-line "rf" [scene _ v]
+  (assoc-in scene [:settings :reflectivity] (parse-unity v)))
 ;; lights
 (defmethod parse-line "pl" [scene _ i I]
   (update-in scene [:lights]
